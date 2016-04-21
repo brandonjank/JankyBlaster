@@ -3,11 +3,7 @@ package com.brandonjank.jankyblaster;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
@@ -52,6 +48,9 @@ public class GameScreen implements Screen {
     String socketID;
     BulletManager bulletManager = new BulletManager(this);
     private ShapeRenderer shapeRenderer;
+    Texture energyBarTexture;
+    float energyBarWidth = 50f;
+    float energyBarHeight = 5f;
 
     public GameScreen(JankyBlaster game, String uname) {
 
@@ -74,6 +73,7 @@ public class GameScreen implements Screen {
         world = new World(new Vector2(0, 0), true);
         debugRenderer = new Box2DDebugRenderer();
 
+        // create debug arena walls
         wallAt(0, worldSize, worldSize, 10);
         wallAt(worldSize, 0, 10, worldSize);
 
@@ -93,6 +93,9 @@ public class GameScreen implements Screen {
 
         shipTexture = new Texture(Gdx.files.internal("data/ship/ship.png"));
         bulletTexture = new Texture(Gdx.files.internal("data/ship/playerbullet.png"));
+
+        // create blue pixel for energy bar
+        energyBarTexture = new Texture(createEnergyBarPixmap(1,1,0,0,1));
 
         // create a ship for the player and set the keyboard focus to it
         player = new Ship(this, socketID, username);
@@ -280,7 +283,13 @@ public class GameScreen implements Screen {
 
         game.batch.draw(background, 0, 0, 0, 0, background.getWidth() * 200, background.getHeight() * 200);
 
-        font.draw(game.batch, "("+SCORE+")", player.sprite.getX()+16, player.sprite.getY());
+        font.draw(game.batch, "("+SCORE+")", player.sprite.getX()+16, player.sprite.getY()-10);
+
+
+        if (player.energy < player.energyMax) {
+            player.energy = Math.min(player.energy + player.energyGainedPerTick, player.energyMax);
+        }
+        game.batch.draw(energyBarTexture, player.sprite.getX()+16, player.sprite.getY()+5, (player.energy/player.energyMax)*energyBarWidth, energyBarHeight);
 
         for (Body body : bodies) {
             Object userData = body.getUserData();
@@ -371,5 +380,12 @@ public class GameScreen implements Screen {
     @Override
     public void dispose() {
 
+    }
+
+    Pixmap createEnergyBarPixmap (int width, int height, int r, int g, int b) {
+        Pixmap pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
+        pixmap.setColor(r, g, b, 1);
+        pixmap.fill();
+        return pixmap;
     }
 }

@@ -1,16 +1,11 @@
 package com.brandonjank.jankyblaster;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.*;
-import com.shephertz.app42.gaming.multiplayer.client.WarpClient;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -24,6 +19,10 @@ public class Ship {
     Sprite sprite;
     int rotation = 0;
     int moving = 0;
+    float energyMax = 1000;
+    float energy = energyMax;
+    float energyCostPerShot = 500;
+    float energyGainedPerTick = 5;
     World world;
     Body body;
     GameScreen game;
@@ -59,8 +58,8 @@ public class Ship {
         // Define the physics of the body
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
-        fixtureDef.density = 0.1f;
-        fixtureDef.restitution = 0.5f; // 50% rebound velocity
+        fixtureDef.density = 0.5f;
+        fixtureDef.restitution = 0.8f; // 80% rebound velocity
         fixtureDef.friction = 0.1f; // how easy or difficult it is for two solid objects to slide past one another
 
         // Apply the physics to the body
@@ -87,9 +86,11 @@ public class Ship {
     }
 
     public void shoot() {
+        if (energy >= energyCostPerShot) {
             float x = 1f * (float) Math.sin(-body.getAngle()) + body.getPosition().x;
             float y = 1f * (float) Math.cos(-body.getAngle()) + body.getPosition().y;
             game.bulletManager.fireBullet(x, y, getRealAngle(), true);
+            energy -= energyCostPerShot;
 
             JSONObject data = new JSONObject();
             try {
@@ -101,6 +102,7 @@ public class Ship {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+        }
     }
 
     public void draw(Batch batch) {
