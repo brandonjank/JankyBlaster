@@ -6,7 +6,7 @@ import com.shephertz.app42.gaming.multiplayer.client.events.ConnectEvent;
 import com.shephertz.app42.gaming.multiplayer.client.listener.ConnectionRequestListener;
 
 /**
- * Created by Phelps on 4/17/2016.
+ * Created by jank6275 on 4/17/2016.
  */
 public class GameConnectionListener implements ConnectionRequestListener {
 

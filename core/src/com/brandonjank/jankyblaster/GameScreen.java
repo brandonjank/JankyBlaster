@@ -1,112 +1,71 @@
 package com.brandonjank.jankyblaster;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.math.Vector;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.*;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.List;
-import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.utils.Array;
-import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisTable;
-
-import com.shephertz.app42.gaming.multiplayer.client.WarpClient;
-import com.shephertz.app42.gaming.multiplayer.client.events.LiveRoomInfoEvent;
-import com.shephertz.app42.gaming.multiplayer.client.events.LobbyEvent;
-import com.shephertz.app42.gaming.multiplayer.client.listener.LobbyRequestListener;
+import io.socket.client.IO;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-
-/**
- * Created by Phelps on 4/17/2016.
- */
 public class GameScreen implements Screen {
 
-    private final JankyBlaster game;
+    private JankyBlaster game;
+    public Socket socket;
     private Texture background;
     private Stage ui;
     public World world;
     private Box2DDebugRenderer debugRenderer;
     public Ship player;
     private Array<Body> bodies = new Array<Body>();
-    public Vector3 unprojectVector = new Vector3();
     public OrthographicCamera camera;
-    private int backgroundOffset;
-    private int backgroundOffset2;
     public Texture shipTexture;
     public Texture bulletTexture;
-    public WarpClient warp;
-    public String username = "Guest" + (int )(Math.random() * 999 + 111);
+    public String username;
     public HashMap<String, Ship> ships = new HashMap<String, Ship>();
     BitmapFont font = new BitmapFont();
     ArrayList<Bullet> bullets = new ArrayList<Bullet>();
     ArrayList<Bullet> playerBullets = new ArrayList<Bullet>();
+    int worldHeightOffset = 2000;
+    int worldWidthOffset = 2000;
+    int worldSize = 400;
+    static int SCORE = 0;
+    String socketID;
+    BulletManager bulletManager = new BulletManager(this);
+    private ShapeRenderer shapeRenderer;
 
-    public GameScreen(final JankyBlaster game) {
+    public GameScreen(JankyBlaster game, String uname) {
 
-        WarpClient.initialize("4e3def12b0735bbcf1483ef90ede6f3eddd52b6fabb214cce114f83234e9d5f5","d3ff2f2008281e80e4fe34a7b24cf36bfaeb484985187bb37f15e910b9a2a99d");
-
-        try {
-            warp = WarpClient.getInstance();
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (uname != null) {
+            username = "Guest" + (int )(Math.random() * 999 + 111);
         }
-        if (warp != null) {
-            warp.addConnectionRequestListener(new GameConnectionListener(warp));
-            warp.addNotificationListener(new GameNotificationListener(this));
-            warp.addLobbyRequestListener(new LobbyRequestListener() {
-                @Override
-                public void onJoinLobbyDone(LobbyEvent lobbyEvent) {
-                    warp.getLiveLobbyInfo();
-                }
-
-                @Override
-                public void onLeaveLobbyDone(LobbyEvent lobbyEvent) {
-
-                }
-
-                @Override
-                public void onSubscribeLobbyDone(LobbyEvent lobbyEvent) {
-
-                }
-
-                @Override
-                public void onUnSubscribeLobbyDone(LobbyEvent lobbyEvent) {
-
-                }
-
-                @Override
-                public void onGetLiveLobbyInfoDone(LiveRoomInfoEvent liveRoomInfoEvent) {
-                    String[] joinedUsers = liveRoomInfoEvent.getJoinedUsers();
-                    for (String user: joinedUsers) {
-                        System.out.println(user + " is in the Lobby!");
-                        newPlayer(user);
-                    }
-                }
-            });
-            warp.connectWithUserName(username);
+        else {
+            username = uname;
         }
-
 
         // injects the base Game object into the Screen scene if we ever need to access things on the outside
         this.game = game;
+
+        shapeRenderer = new ShapeRenderer();
 
         // create the stage for the UI
         ui = new Stage();
@@ -115,47 +74,11 @@ public class GameScreen implements Screen {
         world = new World(new Vector2(0, 0), true);
         debugRenderer = new Box2DDebugRenderer();
 
-        world.setContactListener(new ContactListener() {
-            @Override
-            public void beginContact(Contact contact) {
-                /*
-                Fixture a = contact.getFixtureA();
-                Fixture b = contact.getFixtureB();
+        wallAt(0, worldSize, worldSize, 10);
+        wallAt(worldSize, 0, 10, worldSize);
 
-                Object userDataA = a.getBody().getUserData();
-                Object userDataB = b.getBody().getUserData();
-                if (userDataA instanceof Ship && userDataB instanceof Bullet) {
-                    world.destroyBody(((Bullet) userDataB).ship.body);
-                }
-                else if (userDataB instanceof Ship && userDataA instanceof Bullet) {
-                    world.destroyBody(((Bullet) userDataA).ship.body);
-                }
-                */
-
-            }
-
-            @Override
-            public void endContact(Contact contact) {
-
-            }
-
-            @Override
-            public void preSolve(Contact contact, Manifold oldManifold) {
-
-            }
-
-            @Override
-            public void postSolve(Contact contact, ContactImpulse impulse) {
-
-            }
-        });
-
-        int size = 350;
-        wallAt(0, size, size, 10);
-        wallAt(size, 0, 10, size);
-
-        wallAt(0, -size, size, 10);
-        wallAt(-size, 0, 10, size);
+        wallAt(0, -worldSize, worldSize, 10);
+        wallAt(-worldSize, 0, 10, worldSize);
 
 
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -172,7 +95,7 @@ public class GameScreen implements Screen {
         bulletTexture = new Texture(Gdx.files.internal("data/ship/playerbullet.png"));
 
         // create a ship for the player and set the keyboard focus to it
-        player = new Ship(this);
+        player = new Ship(this, socketID, username);
         player.launch(2000, 2000);
 
         // pass input to both of them
@@ -184,6 +107,108 @@ public class GameScreen implements Screen {
         background = new Texture("data/background.png");
         background.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
 
+        connectSocket();
+        configSocketEvents();
+
+    }
+
+    public void connectSocket(){
+        try {
+            socket = IO.socket("http://45.32.6.119:8080");
+            socket.connect();
+        } catch(Exception e){
+            System.out.println(e);
+        }
+    }
+
+    public void configSocketEvents(){
+
+        socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Gdx.app.log("SocketIO", "Connected");
+                socket.emit("name", username);
+            }
+        }).on("socketID", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONObject data = (JSONObject) args[0];
+                try {
+                    socketID = data.getString("id");
+
+                    Gdx.app.log("SocketIO", "My ID: " + socketID);
+                } catch (JSONException e) {
+                    Gdx.app.log("SocketIO", "Error getting ID");
+                }
+            }
+        }).on("newPlayer", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONObject data = (JSONObject) args[0];
+                try {
+                    newPlayer(data.getString("id"), data.getString("name"));
+                    Gdx.app.log("SocketIO", "New Player Connect: " + data.getString("id"));
+                }catch(JSONException e){
+                    Gdx.app.log("SocketIO", "Error getting New PlayerID");
+                }
+            }
+        }).on("playerDisconnected", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONObject data = (JSONObject) args[0];
+                    /*try {
+                        id = data.getString("id");
+                        friendlyPlayers.remove(id);
+                    }catch(JSONException e){
+                        Gdx.app.log("SocketIO", "Error getting disconnected PlayerID");
+                    }*/
+            }
+        }).on("getPlayers", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONArray objects = (JSONArray) args[0];
+                try {
+                    for(int i = 0; i < objects.length(); i++){
+                        String id = objects.getJSONObject(i).getString("id");
+                        newPlayer(id, objects.getJSONObject(i).getString("name"));
+                        float x = ((Double) objects.getJSONObject(i).getDouble("x")).floatValue();
+                        float y = ((Double) objects.getJSONObject(i).getDouble("y")).floatValue();
+                        double r = (Double) objects.getJSONObject(i).getDouble("r");
+                        updatePlayer(id, x, y, r);
+                    }
+                } catch(JSONException e){
+
+                }
+            }
+        }).on("position", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONObject data = (JSONObject) args[0];
+                try {
+                    String id = data.getString("s");
+                    float x = ((Double) data.getDouble("x")).floatValue();
+                    float y = ((Double) data.getDouble("y")).floatValue();
+                    double r = data.getDouble("r");
+                    updatePlayer(id, x, y, r);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).on("bullet", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONObject data = (JSONObject) args[0];
+                try {
+                    String id = data.getString("s");
+                    float x = ((Double) data.getDouble("x")).floatValue();
+                    float y = ((Double) data.getDouble("y")).floatValue();
+                    float r = ((Double) data.getDouble("r")).floatValue();
+                    spawnBullet(x, y, r);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     public void wallAt(int x, int y, int width, int height) {
@@ -196,9 +221,13 @@ public class GameScreen implements Screen {
         wallsShape.dispose();
     }
 
-    public void newPlayer(String player) {
-        Ship newPlayer = new Ship(this);
-        ships.put(player, newPlayer);
+    public void spawnBullet(float x, float y, float r) {
+        bulletManager.fireBullet(x, y, r, false);
+    }
+
+    public void newPlayer(String socketID, String username) {
+        Ship newPlayer = new Ship(this, socketID, username);
+        ships.put(socketID, newPlayer);
     }
 
     public void updatePlayer(String player, Float x, Float y, Double r) {
@@ -217,6 +246,14 @@ public class GameScreen implements Screen {
         x1 -= x2;
         y1 -= y2;
         return Math.sqrt(x1 * x1 + y1 * y1);
+    }
+
+    public boolean checkCollision(Ship ship, Bullet bullet) {
+        double bulletDistance = distance(ship.sprite.getX()+ship.sprite.getWidth()/2, ship.sprite.getY()+ship.sprite.getHeight()/2, bullet.sprite.getX(), bullet.sprite.getY());
+        if (bulletDistance < (ship.sprite.getWidth()/2) - 2) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -243,6 +280,7 @@ public class GameScreen implements Screen {
 
         game.batch.draw(background, 0, 0, 0, 0, background.getWidth() * 200, background.getHeight() * 200);
 
+        font.draw(game.batch, "("+SCORE+")", player.sprite.getX()+16, player.sprite.getY());
 
         for (Body body : bodies) {
             Object userData = body.getUserData();
@@ -252,53 +290,55 @@ public class GameScreen implements Screen {
             }
         }
 
+
+        // update enemy ships
         Iterator it = ships.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry pair = (Map.Entry)it.next();
             Ship ship = (Ship) pair.getValue();
             ship.draw(game.batch);
             font.draw(game.batch, pair.getKey().toString(), ship.sprite.getX()+16, ship.sprite.getY());
-            font.draw(game.batch, "("+ ship.sprite.getX() +","+ ship.sprite.getY() +")", ship.sprite.getX()+16, ship.sprite.getY()-15);
             //it.remove();
         }
-        // lot of code duplication :(
-        // YOUR hit by PLAYER bullets here / remove here
-        for (Bullet bullet : playerBullets) {
-            bullet.update();
-            bullet.draw(game.batch);
-        }
-        // remove YOUR bullets here, "fake" player HITS here
-        for (Bullet bullet : bullets) {
-            bullet.update();
-            bullet.draw(game.batch);
-            //font.draw(game.batch, "("+ bullet.sprite.getX() +","+ bullet.sprite.getX() +")", bullet.sprite.getX()+8, bullet.sprite.getY());
 
-            Vector2 position = bullet.position;
+        bulletManager.update();
 
-            // remove bullets that exit the world
-            int worldHeight = 2000;
-            int worldWidth = 2000;
-            if (bullet.sprite.getX() > worldWidth || bullet.sprite.getY() > worldHeight || bullet.sprite.getX() < 0 || bullet.sprite.getY() < 0) {
-                //bullets.remove(bullet);
-            }
+        shapeRenderer.setProjectionMatrix(camera.combined);
 
 
-            Iterator itt = ships.entrySet().iterator();
-            while (itt.hasNext()) {
-                Map.Entry pair = (Map.Entry)itt.next();
-                Ship ship = (Ship) pair.getValue();
 
-                // check if bullet hit a ship
-                double bulletDistance = distance(ship.sprite.getX()+ship.sprite.getWidth()/2, ship.sprite.getY()+ship.sprite.getHeight()/2, bullet.sprite.getX(), bullet.sprite.getY());
-                if (bulletDistance < 5) {
-                    // bullet hit a ship
-                    System.out.println("Your bullet hit "+pair.getKey().toString()+"!!");
+        for (Bullet bullet : bulletManager.bullets) {
+            if (bullet.free) continue; // fast break on "dead" bullets
+            if (bullet.position.x > worldWidthOffset + worldSize || bullet.position.y > worldHeightOffset + worldSize || bullet.position.y < worldWidthOffset - worldSize || bullet.position.y < worldHeightOffset - worldSize) {
+                bulletManager.destroyBullet(bullet);
+            } else {
+                if (bullet.isMine) {
+                    // check if the player's bullet hit another player
+                    Iterator itt = ships.entrySet().iterator();
+                    while (itt.hasNext()) {
+                        Ship ship = (Ship)((Map.Entry)itt.next()).getValue();
+                        if (checkCollision(ship, bullet)) {
+                            System.out.println("You hit " + ship.username + "!!");
+                            SCORE++;
+                            bulletManager.destroyBullet(bullet);
+                        }
+                    }
                 }
-
-                //itt.remove();
+                else {
+                    // check if the player got hit by another player's bullet
+                    if (checkCollision(player, bullet)) {
+                        System.out.println("You got hit!"); // TODO: hit by?
+                        SCORE--;
+                        bulletManager.destroyBullet(bullet);
+                        player.body.setTransform(2000f, 2000f, 0f);
+                        player.body.setLinearVelocity(0, 0);
+                    }
+                }
             }
-
         }
+
+        bulletManager.draw(game.batch);
+
 
         game.batch.end();
 

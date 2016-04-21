@@ -7,18 +7,21 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.utils.Align;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisTable;
 
 /**
- * Created by Phelps on 4/17/2016.
+ * Created by jank6275 on 4/17/2016.
  */
 public class MenuScreen implements Screen {
 
     final JankyBlaster game;
     private Stage stage;
     private OrthographicCamera camera;
+    String username;
 
     public MenuScreen (final JankyBlaster game) {
         this.game = game;
@@ -32,6 +35,17 @@ public class MenuScreen implements Screen {
         stage.addActor(table);
 
 
+        TextField textfield = new TextField("", VisUI.getSkin());
+        textfield.setMessageText("Name");
+        textfield.setAlignment(Align.center);
+        table.add(textfield);
+
+        textfield.setTextFieldListener(new TextField.TextFieldListener() {
+            public void keyTyped (TextField textField, char key) {
+                username = textField.getText();
+            }
+        });
+
         // Draw a button to start the game
         final TextButton startGameButton = new TextButton("Start Game", VisUI.getSkin());
         table.add(startGameButton);
@@ -39,7 +53,7 @@ public class MenuScreen implements Screen {
         startGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new GameScreen(game));
+                game.setScreen(new GameScreen(game, username));
                 dispose();
             }
         });

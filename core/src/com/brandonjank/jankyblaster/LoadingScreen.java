@@ -5,7 +5,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 
 /**
- * Created by backb on 4/18/2016.
+ * Created by jank6275 on 4/18/2016.
  *
  */
 public class LoadingScreen implements Screen {

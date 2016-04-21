@@ -16,7 +16,7 @@ import org.json.JSONObject;
 
 
 /**
- * Created by Phelps on 4/17/2016.
+ * Created by jank6275 on 4/17/2016.
  */
 public class Ship {
 
@@ -27,11 +27,14 @@ public class Ship {
     World world;
     Body body;
     GameScreen game;
+    String socketID;
+    String username;
     boolean isLocal = false;
 
 
-    public Ship(GameScreen game) {
-
+    public Ship(GameScreen game, String socketID, String username) {
+        this.socketID = socketID;
+        this.username = username;
         this.game = game;
         this.texture = game.shipTexture;
         this.world = game.world;
@@ -67,11 +70,7 @@ public class Ship {
         shape.dispose();
     }
 
-    public void handleKeyInput(InputEvent.Type event, int keycode, boolean remote) {
-        if (remote) {
-            System.out.println("Remote: " + event.toString());
-        }
-
+    public void handleKeyInput(InputEvent.Type event, int keycode) {
         if (event == InputEvent.Type.keyDown) {
             if (keycode == Input.Keys.W) { moving   =  1; }
             if (keycode == Input.Keys.S) { moving   = -1; }
@@ -88,8 +87,20 @@ public class Ship {
     }
 
     public void shoot() {
-        Bullet b = new Bullet(game, this);
-        game.bullets.add(b);
+            float x = 1f * (float) Math.sin(-body.getAngle()) + body.getPosition().x;
+            float y = 1f * (float) Math.cos(-body.getAngle()) + body.getPosition().y;
+            game.bulletManager.fireBullet(x, y, getRealAngle(), true);
+
+            JSONObject data = new JSONObject();
+            try {
+                data.put("s", game.socketID);
+                data.put("x", x);
+                data.put("y", y);
+                data.put("r", getRealAngle());
+                game.socket.emit("bullet", data);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
     }
 
     public void draw(Batch batch) {
@@ -102,6 +113,12 @@ public class Ship {
     public void updateRemote(Float x, Float y, Double r) {
         sprite.setPosition(x - texture.getWidth() / 2, y - texture.getHeight() / 2);
         sprite.setRotation( (float) Math.toDegrees(r) - 90 );
+    }
+
+    private float getRealAngle() {
+        float xr = 1 * (float) Math.cos(-body.getAngle());
+        float yr = 1 * (float) Math.sin(-body.getAngle());
+        return (float) Math.atan2(xr, yr);
     }
 
     public void update(float delta) {
@@ -127,13 +144,13 @@ public class Ship {
         float x, y;
 
         if (moving > 0) {
-            x = 5000f * (float) Math.sin(-body.getAngle());
-            y = 5000f * (float) Math.cos(-body.getAngle());
+            x = 100f * (float) Math.sin(-body.getAngle());
+            y = 100f * (float) Math.cos(-body.getAngle());
             body.applyLinearImpulse( x,  y, body.getPosition().x, body.getPosition().y, true);
         }
         else if (moving < 0) {
-            x = -5000f * (float) Math.sin(-body.getAngle());
-            y = -5000f * (float) Math.cos(-body.getAngle());
+            x = -50f * (float) Math.sin(-body.getAngle());
+            y = -50f * (float) Math.cos(-body.getAngle());
             body.applyLinearImpulse( x,  y, body.getPosition().x, body.getPosition().y, true);
         }
 
@@ -148,21 +165,17 @@ public class Ship {
             body.setAngularVelocity(0f);
         }
 
-        JSONObject data = new JSONObject();
+        JSONObject obj = new JSONObject();
         try {
-            data.put("t", "s");
-            data.put("p", game.username);
-            data.put("x", body.getPosition().x);
-            data.put("y", body.getPosition().y);
-
-            float xr = 1 * (float) Math.cos(-body.getAngle());
-            float yr = 1 * (float) Math.sin(-body.getAngle());
-            double rr = Math.atan2(xr, yr);
-            data.put("r", rr);
+            obj.put("s", game.socketID);
+            obj.put("x", body.getPosition().x);
+            obj.put("y", body.getPosition().y);
+            obj.put("r", getRealAngle());
+            game.socket.emit("position", obj);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        game.warp.sendUpdatePeers(data.toString().getBytes());
+
         sprite.setPosition(body.getPosition().x - sprite.getWidth() / 2, body.getPosition().y - sprite.getHeight() / 2);
     }
 

@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 
 /**
- * Created by backb on 4/18/2016.
+ * Created by jank6275 on 4/18/2016.
  */
 public class ResourceManager {
     public static AssetManager manager;
