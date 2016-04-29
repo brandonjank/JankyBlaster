@@ -44,6 +44,10 @@ public class Bullet {
     }
 
     public void draw(Batch batch) {
+        if (isMine)
+            sprite.setTexture(Assets.bulletTexture);
+        else
+            sprite.setTexture(Assets.enemyBulletTexture);
         sprite.draw(batch);
     }
 

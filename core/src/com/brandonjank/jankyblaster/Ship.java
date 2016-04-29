@@ -56,7 +56,7 @@ public class Ship {
 
         // Create the shape of the body
         CircleShape shape = new CircleShape();
-        shape.setRadius(5f);
+        shape.setRadius(8f);
 
         // Define the physics of the body
         FixtureDef fixtureDef = new FixtureDef();
@@ -92,6 +92,7 @@ public class Ship {
         if (energy >= energyCostPerShot) {
             float x = 1f * (float) Math.sin(-body.getAngle()) + body.getPosition().x;
             float y = 1f * (float) Math.cos(-body.getAngle()) + body.getPosition().y;
+            Assets.shootBullet2Sound.play();
             game.bulletManager.fireBullet(x, y, getRealAngle(), true, game.socketID, game.username);
             energy -= energyCostPerShot;
 
@@ -116,9 +117,10 @@ public class Ship {
         sprite.draw(batch);
     }
 
-    public void updateRemote(Float x, Float y, Double r) {
+    public void updateRemote(Float x, Float y, Double r, Float e) {
         sprite.setPosition(x - texture.getWidth() / 2, y - texture.getHeight() / 2);
         sprite.setRotation( (float) Math.toDegrees(r) - 90 );
+        energy = e;
     }
 
     private float getRealAngle() {
@@ -150,9 +152,10 @@ public class Ship {
         }
         */
 
+        // calc velocity
+
 
         float x, y;
-
 
 
         if (moving > 0) {
@@ -173,24 +176,13 @@ public class Ship {
             body.setAngularVelocity(-2f);
         }
         else {
-            // stops rotation instantly
             body.setAngularVelocity(0f);
         }
 
-        // thread
+        // movement thread
         if (dTimer > 0.05) {
             dTimer = 0;
-            new MoveThread(game.socket, game.socketID, body.getPosition().x, body.getPosition().y, getRealAngle()).start();
-//            JSONObject obj = new JSONObject();
-//            try {
-//                obj.put("s", game.socketID);
-//                obj.put("x", body.getPosition().x);
-//                obj.put("y", body.getPosition().y);
-//                obj.put("r", getRealAngle());
-//                game.socket.emit("position", obj);
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
+            new MoveThread(game.socket, game.socketID, body.getPosition().x, body.getPosition().y, getRealAngle(), energy).start();
         }
 
         sprite.setPosition(body.getPosition().x - sprite.getWidth() / 2, body.getPosition().y - sprite.getHeight() / 2);

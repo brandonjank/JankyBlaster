@@ -26,6 +26,7 @@ public class BulletManager {
                 b.applyVelocity(x, y, r);
                 b.owner = owner;
                 b.player = p;
+
                 return b;
             }
         }

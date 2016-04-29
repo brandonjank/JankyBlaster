@@ -9,16 +9,17 @@ import org.json.JSONObject;
  */
 class MoveThread  extends Thread {
     private String s;
-    private Float x, y, r;
+    private Float x, y, r, e;
     Socket socket;
 
-    public MoveThread(Socket socket, String s, float x, float y, float r)
+    public MoveThread(Socket socket, String s, float x, float y, float r, float e)
     {
         this.socket = socket;
         this.s = s;
         this.x = x;
         this.y = y;
         this.r = r;
+        this.e = e;
     }
 
     @Override
@@ -30,6 +31,7 @@ class MoveThread  extends Thread {
             obj.put("x", x);
             obj.put("y", y);
             obj.put("r", r);
+            obj.put("e", e);
             socket.emit("position", obj);
         } catch (JSONException e) {
             e.printStackTrace();

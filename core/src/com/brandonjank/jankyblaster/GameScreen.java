@@ -231,7 +231,7 @@ public class GameScreen implements Screen {
                         float x = ((Double) objects.getJSONObject(i).getDouble("x")).floatValue();
                         float y = ((Double) objects.getJSONObject(i).getDouble("y")).floatValue();
                         double r = (Double) objects.getJSONObject(i).getDouble("r");
-                        updatePlayer(id, x, y, r);
+                        updatePlayer(id, x, y, r, 1.0f);
                     }
                 } catch(JSONException e){
                     e.printStackTrace();
@@ -246,7 +246,8 @@ public class GameScreen implements Screen {
                     float x = ((Double) data.getDouble("x")).floatValue();
                     float y = ((Double) data.getDouble("y")).floatValue();
                     double r = data.getDouble("r");
-                    updatePlayer(id, x, y, r);
+                    float e = ((Double) data.getDouble("e")).floatValue();
+                    updatePlayer(id, x, y, r, e);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -280,6 +281,7 @@ public class GameScreen implements Screen {
     }
 
     public void spawnBullet(float x, float y, float r, String owner, String p) {
+        Assets.shootBulletSound.play();
         bulletManager.fireBullet(x, y, r, false, owner, p);
     }
 
@@ -289,10 +291,10 @@ public class GameScreen implements Screen {
         ships.put(socketID, newPlayer);
     }
 
-    public void updatePlayer(String player, Float x, Float y, Double r) {
+    public void updatePlayer(String player, Float x, Float y, Double r, Float e) {
         Ship playerShip = ships.get(player);
         if (playerShip != null) {
-            playerShip.updateRemote(x, y, r);
+            playerShip.updateRemote(x, y, r, e);
         }
     }
 
@@ -321,6 +323,8 @@ public class GameScreen implements Screen {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        world.step(delta, 10, 10);
+
         // update our minimap camera
         cameraMiniMap.update();
         batchMiniMap.setProjectionMatrix(cameraMiniMap.combined);
@@ -328,21 +332,15 @@ public class GameScreen implements Screen {
         batchMiniMap.draw(player.sprite.getTexture(), player.sprite.getX() - (640/2)*4 + ((200-0)/2)*4, player.sprite.getY() + (480/2)*4 - ((480-280)/2)*4, 20, 20);
         batchMiniMap.end();
 
-
-
         Camera uiCamera = ui.getCamera();
 
         ui.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
-
-
 
         camera.position.set(player.body.getPosition().x, player.body.getPosition().y, 0);
         camera.update();
         //camera.zoom = 5;
 
 
-
-        world.step(delta, 8, 3);
 
         // update and render our bodies
         world.getBodies(bodies);
@@ -359,14 +357,7 @@ public class GameScreen implements Screen {
 
         game.batch.begin();
 
-
         font.draw(game.batch, "("+SCORE+")", player.sprite.getX()+16, player.sprite.getY()-10);
-
-
-        if (player.energy < player.energyMax) {
-            player.energy = Math.min(player.energy + player.energyGainedPerTick, player.energyMax);
-        }
-        game.batch.draw(energyBarTexture, player.sprite.getX()+16, player.sprite.getY()+5, (player.energy/player.energyMax)*energyBarWidth, energyBarHeight);
 
         for (Body body : bodies) {
             Object userData = body.getUserData();
@@ -376,7 +367,6 @@ public class GameScreen implements Screen {
             }
         }
 
-
         // update enemy ships
         Iterator it = ships.entrySet().iterator();
         while (it.hasNext()) {
@@ -385,18 +375,19 @@ public class GameScreen implements Screen {
             //System.out.println(ship);
             ship.draw(game.batch);
             font.draw(game.batch, ship.username, ship.sprite.getX()+16, ship.sprite.getY());
-            //it.remove();
+            // draw enemy energy bar
+            game.batch.draw(energyBarTexture, ship.sprite.getX()+16, ship.sprite.getY()+5, (ship.energy/ship.energyMax)*energyBarWidth, energyBarHeight);
         }
 
         bulletManager.update();
 
         shapeRenderer.setProjectionMatrix(camera.combined);
 
-
-
         for (final Bullet bullet : bulletManager.bullets) {
-            if (bullet.free) continue; // fast break on "dead" bullets
+            // skip free bullets
+            if (bullet.free) continue;
 
+            // destroy bullets that hit walls
             world.QueryAABB(new QueryCallback() {
                 @Override
                 public boolean reportFixture(Fixture fixture) {
@@ -407,42 +398,58 @@ public class GameScreen implements Screen {
                 }
             }, bullet.position.x, bullet.position.y, bullet.position.x+16, bullet.position.y+16);
 
-//            if (bullet.position.x > worldWidthOffset + worldSize
-//                    || bullet.position.y > worldHeightOffset + worldSize
-//                    || bullet.position.y < worldWidthOffset - worldSize
-//                    || bullet.position.y < worldHeightOffset - worldSize) {
-//
-//            } else {
-                if (bullet.isMine) {
-                    // check if the player's bullet hit another player
-                    Iterator itt = ships.entrySet().iterator();
-                    while (itt.hasNext()) {
-                        Ship ship = (Ship)((Map.Entry)itt.next()).getValue();
-                        if (checkCollision(ship, bullet)) {
-                            System.out.println("You hit " + ship.username + "!!");
-                            chatLog.add("You hit " + ship.username + "!!");
+            // check for player impacts
+            if (bullet.isMine) {
+                // check if the player's bullet hit another player
+                Iterator itt = ships.entrySet().iterator();
+                while (itt.hasNext()) {
+                    Ship ship = (Ship)((Map.Entry)itt.next()).getValue();
+                    if (checkCollision(ship, bullet)) {
+                        ship.energy = ship.energy - ship.energyCostPerShot*1.5f;
+                        if (ship.energy <= 0) {
+                            // enemy destroyed
                             SCORE++;
-                            bulletManager.destroyBullet(bullet);
+                            Assets.explodeEnemySound.play();
+                            chatLog.add("You destroyed " + ship.username + "!!");
+                        } else {
+                            // enemy survived
+                            Assets.hitSound.play();
+                            chatLog.add("You hit " + ship.username + "!!");
                         }
-                    }
-                }
-                else {
-                    // check if the player got hit by another player's bullet
-                    if (checkCollision(player, bullet)) {
-                        System.out.println("You got hit by " + bullet.player + "!");
-                        chatLog.add("You got hit by " + bullet.player + "!");
-                        SCORE--;
                         bulletManager.destroyBullet(bullet);
-                        player.body.setTransform(950, 1100, 0f);
-                        player.body.setLinearVelocity(0, 0);
                     }
                 }
-//            }
+            } else {
+                // check if the player got hit by another player's bullet
+                if (checkCollision(player, bullet)) {
+                    player.energy = player.energy - player.energyCostPerShot*1.5f;
+                    if (player.energy <= 0) {
+                        // player "died"
+                        SCORE--;
+                        Assets.explodePlayerSound.play();
+                        chatLog.add("You were destroyed by " + bullet.player + "!!");
+                        // respawn
+                        player.body.setLinearVelocity(0, 0);
+                        player.body.setTransform(950, 1100, 0f);
+                        player.energy = player.energyMax;
+                    } else {
+                        // player survived
+                        Assets.hit2Sound.play();
+                        chatLog.add("You got hit by " + bullet.player + "!");
+                    }
+                    bulletManager.destroyBullet(bullet);
+                }
+            }
         }
 
+        // regen player ship energy
+        if (player.energy < player.energyMax) {
+            player.energy = Math.min(player.energy + player.energyGainedPerTick, player.energyMax);
+        }
+        // display player ship energy bar
+        game.batch.draw(energyBarTexture, player.sprite.getX()+16, player.sprite.getY()+5, (player.energy/player.energyMax)*energyBarWidth, energyBarHeight);
+
         bulletManager.draw(game.batch);
-
-
 
         game.batch.end();
 
@@ -458,14 +465,7 @@ public class GameScreen implements Screen {
             cyo++;
         }
 
-
         game.batch.end();
-
-
-        // Chat Log
-        //todo: update chat window to show new messages in chatLog
-
-
 
         ui.draw();
 
