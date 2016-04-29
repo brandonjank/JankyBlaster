@@ -1,6 +1,8 @@
 package com.brandonjank.jankyblaster;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -17,22 +19,24 @@ public class JankyBlaster extends Game {
         font = new BitmapFont();
         // Load the VisUI styles
         VisUI.load();
-        this.setScreen(new MenuScreen(this));
+        this.setScreen(new LoadingScreen(this));
 	}
 
 	@Override
 	public void render () {
-		super.render();
+            super.render();
 	}
 
     public void dispose() {
         batch.dispose();
         font.dispose();
+        Assets.dispose();
     }
 
 	@Override
 	public void resume()
 	{
+		Assets.manager.finishLoading();
 	}
 
 }

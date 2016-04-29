@@ -4,8 +4,10 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.*;
+import io.socket.client.Socket;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -28,6 +30,7 @@ public class Ship {
     GameScreen game;
     String socketID;
     String username;
+    Fixture fixture;
     boolean isLocal = false;
 
 
@@ -35,7 +38,7 @@ public class Ship {
         this.socketID = socketID;
         this.username = username;
         this.game = game;
-        this.texture = game.shipTexture;
+        this.texture = Assets.shipTexture;
         this.world = game.world;
         sprite = new Sprite(texture);
     }
@@ -60,10 +63,10 @@ public class Ship {
         fixtureDef.shape = shape;
         fixtureDef.density = 0.5f;
         fixtureDef.restitution = 0.8f; // 80% rebound velocity
-        fixtureDef.friction = 0.1f; // how easy or difficult it is for two solid objects to slide past one another
+        fixtureDef.friction = 0.5f; // how easy or difficult it is for two solid objects to slide past one another
 
         // Apply the physics to the body
-        Fixture fixture = body.createFixture(fixtureDef);
+        fixture = body.createFixture(fixtureDef);
 
         // We don't need the shape anymore
         shape.dispose();
@@ -89,7 +92,7 @@ public class Ship {
         if (energy >= energyCostPerShot) {
             float x = 1f * (float) Math.sin(-body.getAngle()) + body.getPosition().x;
             float y = 1f * (float) Math.cos(-body.getAngle()) + body.getPosition().y;
-            game.bulletManager.fireBullet(x, y, getRealAngle(), true);
+            game.bulletManager.fireBullet(x, y, getRealAngle(), true, game.socketID, game.username);
             energy -= energyCostPerShot;
 
             JSONObject data = new JSONObject();
@@ -98,6 +101,7 @@ public class Ship {
                 data.put("x", x);
                 data.put("y", y);
                 data.put("r", getRealAngle());
+                data.put("p", game.username);
                 game.socket.emit("bullet", data);
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -123,7 +127,11 @@ public class Ship {
         return (float) Math.atan2(xr, yr);
     }
 
+    float dTimer = 0;
+
     public void update(float delta) {
+
+        dTimer += delta;
 
         /*
         if (currentSpeed < maxspeed)
@@ -144,6 +152,8 @@ public class Ship {
 
 
         float x, y;
+
+
 
         if (moving > 0) {
             x = 100f * (float) Math.sin(-body.getAngle());
@@ -167,18 +177,24 @@ public class Ship {
             body.setAngularVelocity(0f);
         }
 
-        JSONObject obj = new JSONObject();
-        try {
-            obj.put("s", game.socketID);
-            obj.put("x", body.getPosition().x);
-            obj.put("y", body.getPosition().y);
-            obj.put("r", getRealAngle());
-            game.socket.emit("position", obj);
-        } catch (JSONException e) {
-            e.printStackTrace();
+        // thread
+        if (dTimer > 0.05) {
+            dTimer = 0;
+            new MoveThread(game.socket, game.socketID, body.getPosition().x, body.getPosition().y, getRealAngle()).start();
+//            JSONObject obj = new JSONObject();
+//            try {
+//                obj.put("s", game.socketID);
+//                obj.put("x", body.getPosition().x);
+//                obj.put("y", body.getPosition().y);
+//                obj.put("r", getRealAngle());
+//                game.socket.emit("position", obj);
+//            } catch (JSONException e) {
+//                e.printStackTrace();
+//            }
         }
 
         sprite.setPosition(body.getPosition().x - sprite.getWidth() / 2, body.getPosition().y - sprite.getHeight() / 2);
+
     }
 
 }

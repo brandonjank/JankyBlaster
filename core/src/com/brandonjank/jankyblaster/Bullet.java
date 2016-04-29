@@ -18,10 +18,12 @@ public class Bullet {
     boolean free = false;
     boolean isMine = false;
     Vector2 position = new Vector2();
+    String owner = "";
+    String player = "";
 
     public Bullet(GameScreen game) {
         this.game = game;
-        texture = game.bulletTexture;
+        texture = Assets.bulletTexture;
         sprite = new Sprite(texture);
         sprite.setSize(texture.getWidth(), texture.getHeight());
     }

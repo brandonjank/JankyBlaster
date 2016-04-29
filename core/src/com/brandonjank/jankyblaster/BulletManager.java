@@ -18,12 +18,14 @@ public class BulletManager {
         this.game = game;
     }
 
-    public Bullet fireBullet(float x, float y, float r, boolean isMine) {
+    public Bullet fireBullet(float x, float y, float r, boolean isMine, String owner, String p) {
         for (Bullet b: bullets) {
             if (b.free) {
                 b.free = false;
                 b.isMine = isMine;
                 b.applyVelocity(x, y, r);
+                b.owner = owner;
+                b.player = p;
                 return b;
             }
         }

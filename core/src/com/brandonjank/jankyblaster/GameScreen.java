@@ -5,11 +5,21 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
+import com.badlogic.gdx.maps.tiled.TmxMapLoader;
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
-import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.*;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
+import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisTable;
 import io.socket.client.IO;
 import io.socket.client.Socket;
@@ -18,10 +28,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
+
 
 public class GameScreen implements Screen {
 
@@ -34,8 +42,8 @@ public class GameScreen implements Screen {
     public Ship player;
     private Array<Body> bodies = new Array<Body>();
     public OrthographicCamera camera;
-    public Texture shipTexture;
-    public Texture bulletTexture;
+    private OrthographicCamera cameraMiniMap;
+    Viewport viewport;
     public String username;
     public HashMap<String, Ship> ships = new HashMap<String, Ship>();
     BitmapFont font = new BitmapFont();
@@ -51,14 +59,24 @@ public class GameScreen implements Screen {
     Texture energyBarTexture;
     float energyBarWidth = 50f;
     float energyBarHeight = 5f;
+    ArrayList<String> chatLog = new ArrayList<String>();
+    OrthogonalTiledMapRenderer mapRenderer;
+    List chatList;
+    ScrollPane chatScrollPane;
+    SpriteBatch batchMiniMap;
+
+    String serverUrl = "http://162.243.142.208:8080";
 
     public GameScreen(JankyBlaster game, String uname) {
 
+        chatLog.add("Welcome to JankyBlaster, have fun and play nice!");
+        chatLog.add("Version v0.2.1-alpha");
+
         if (uname != null) {
-            username = "Guest" + (int )(Math.random() * 999 + 111);
+            username = uname;
         }
         else {
-            username = uname;
+            username = "Guest" + (int )(Math.random() * 999 + 111);
         }
 
         // injects the base Game object into the Screen scene if we ever need to access things on the outside
@@ -74,32 +92,37 @@ public class GameScreen implements Screen {
         debugRenderer = new Box2DDebugRenderer();
 
         // create debug arena walls
+        /*
         wallAt(0, worldSize, worldSize, 10);
         wallAt(worldSize, 0, 10, worldSize);
-
         wallAt(0, -worldSize, worldSize, 10);
         wallAt(-worldSize, 0, 10, worldSize);
+        */
 
 
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        viewport = new FitViewport(640, 480, camera);
+
+        // setup minimap camera
+        cameraMiniMap = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        cameraMiniMap.zoom = 4;
+        batchMiniMap = new SpriteBatch();
 
         // Table fills the screen, everything goes in the table
-        VisTable table = new VisTable();
-        table.setFillParent(true);
-        ui.addActor(table);
+        //VisTable table = new VisTable();
+        //table.setFillParent(true);
+        //ui.addActor(table);
 
         //Label test = new Label("Test", VisUI.getSkin());
         //table.add(test);
 
-        shipTexture = new Texture(Gdx.files.internal("data/ship/ship.png"));
-        bulletTexture = new Texture(Gdx.files.internal("data/ship/playerbullet.png"));
 
         // create blue pixel for energy bar
-        energyBarTexture = new Texture(createEnergyBarPixmap(1,1,0,0,1));
+        energyBarTexture = new Texture(createEnergyBarPixmap(1,1,0,0,1,0.8f));
 
         // create a ship for the player and set the keyboard focus to it
         player = new Ship(this, socketID, username);
-        player.launch(2000, 2000);
+        player.launch(950, 1100);
 
         // pass input to both of them
         InputMultiplexer multiplexer = new InputMultiplexer();
@@ -113,15 +136,38 @@ public class GameScreen implements Screen {
         connectSocket();
         configSocketEvents();
 
+        TiledMap map = new TmxMapLoader().load("data/maps/test.tmx");
+        TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get(0);
+        int columns = layer.getWidth();
+        int rows = layer.getHeight();
+
+        for (int i = 0; i < columns; i++) {
+            for (int j = 0; j < rows; j++) {
+                TiledMapTileLayer.Cell cell = layer.getCell(i, j);
+
+                if (cell != null) {
+                    int size = 16;
+                    int x = (i * size) + 8;
+                    int y = (j * size) + 8;
+                    wallAt(x, y, 8, 8);
+                }
+            }
+        }
+
+        mapRenderer = new OrthogonalTiledMapRenderer(map, 1);
+
+
     }
 
     public void connectSocket(){
         try {
-            socket = IO.socket("http://45.32.6.119:8080");
+            socket = IO.socket(serverUrl);
             socket.connect();
         } catch(Exception e){
             System.out.println(e);
         }
+
+        // TODO: handle when not connected
     }
 
     public void configSocketEvents(){
@@ -130,6 +176,7 @@ public class GameScreen implements Screen {
             @Override
             public void call(Object... args) {
                 Gdx.app.log("SocketIO", "Connected");
+                chatLog.add("You have connected to: " + serverUrl);
                 socket.emit("name", username);
             }
         }).on("socketID", new Emitter.Listener() {
@@ -139,9 +186,11 @@ public class GameScreen implements Screen {
                 try {
                     socketID = data.getString("id");
 
-                    Gdx.app.log("SocketIO", "My ID: " + socketID);
+                    Gdx.app.log("SocketIO", "My socket ID: " + socketID);
+                    chatLog.add("Your socket ID is: " + socketID);
                 } catch (JSONException e) {
-                    Gdx.app.log("SocketIO", "Error getting ID");
+                    Gdx.app.log("SocketIO", "ERROR: Could not get socket ID from server.");
+                    chatLog.add("ERROR: Could not get socket ID from server.");
                 }
             }
         }).on("newPlayer", new Emitter.Listener() {
@@ -150,21 +199,26 @@ public class GameScreen implements Screen {
                 JSONObject data = (JSONObject) args[0];
                 try {
                     newPlayer(data.getString("id"), data.getString("name"));
-                    Gdx.app.log("SocketIO", "New Player Connect: " + data.getString("id"));
-                }catch(JSONException e){
-                    Gdx.app.log("SocketIO", "Error getting New PlayerID");
+                    Gdx.app.log("SocketIO", "New Player: " + data.getString("id"));
+                    chatLog.add(data.getString("id") + " has joined the game.");
+                } catch(JSONException e) {
+                    e.printStackTrace();
+                    Gdx.app.log("SocketIO", "ERROR: Could not get new player ID from server.");
+                    chatLog.add("ERROR: Could not get new player ID from server.");
                 }
             }
         }).on("playerDisconnected", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 JSONObject data = (JSONObject) args[0];
-                    /*try {
-                        id = data.getString("id");
-                        friendlyPlayers.remove(id);
-                    }catch(JSONException e){
-                        Gdx.app.log("SocketIO", "Error getting disconnected PlayerID");
-                    }*/
+                try {
+                    String id = data.getString("id");
+                    Gdx.app.log("SocketIO", "Disconnecting Player: " + id);
+                    chatLog.add(id + " has disconnected from the game.");
+                    ships.remove(id);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
         }).on("getPlayers", new Emitter.Listener() {
             @Override
@@ -180,7 +234,7 @@ public class GameScreen implements Screen {
                         updatePlayer(id, x, y, r);
                     }
                 } catch(JSONException e){
-
+                    e.printStackTrace();
                 }
             }
         }).on("position", new Emitter.Listener() {
@@ -203,10 +257,11 @@ public class GameScreen implements Screen {
                 JSONObject data = (JSONObject) args[0];
                 try {
                     String id = data.getString("s");
+                    String p = data.getString("p");
                     float x = ((Double) data.getDouble("x")).floatValue();
                     float y = ((Double) data.getDouble("y")).floatValue();
                     float r = ((Double) data.getDouble("r")).floatValue();
-                    spawnBullet(x, y, r);
+                    spawnBullet(x, y, r, id, p);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -216,7 +271,7 @@ public class GameScreen implements Screen {
 
     public void wallAt(int x, int y, int width, int height) {
         BodyDef wallsDef = new BodyDef();
-        wallsDef.position.set(2000 + x, 2000 + y);
+        wallsDef.position.set(x, y);
         Body wallsBody = world.createBody(wallsDef);
         PolygonShape wallsShape = new PolygonShape();
         wallsShape.setAsBox(width, height);
@@ -224,12 +279,13 @@ public class GameScreen implements Screen {
         wallsShape.dispose();
     }
 
-    public void spawnBullet(float x, float y, float r) {
-        bulletManager.fireBullet(x, y, r, false);
+    public void spawnBullet(float x, float y, float r, String owner, String p) {
+        bulletManager.fireBullet(x, y, r, false, owner, p);
     }
 
     public void newPlayer(String socketID, String username) {
         Ship newPlayer = new Ship(this, socketID, username);
+        System.out.println(newPlayer.socketID);
         ships.put(socketID, newPlayer);
     }
 
@@ -265,13 +321,26 @@ public class GameScreen implements Screen {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        // update our minimap camera
+        cameraMiniMap.update();
+        batchMiniMap.setProjectionMatrix(cameraMiniMap.combined);
+        batchMiniMap.begin();
+        batchMiniMap.draw(player.sprite.getTexture(), player.sprite.getX() - (640/2)*4 + ((200-0)/2)*4, player.sprite.getY() + (480/2)*4 - ((480-280)/2)*4, 20, 20);
+        batchMiniMap.end();
+
+
+
         Camera uiCamera = ui.getCamera();
 
-        // update the UI
         ui.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
+
+
 
         camera.position.set(player.body.getPosition().x, player.body.getPosition().y, 0);
         camera.update();
+        //camera.zoom = 5;
+
+
 
         world.step(delta, 8, 3);
 
@@ -279,9 +348,17 @@ public class GameScreen implements Screen {
         world.getBodies(bodies);
 
         game.batch.setProjectionMatrix(camera.combined);
+
+        game.batch.begin();
+        game.batch.draw(background, 0, 0, 0, 0, background.getWidth() * 200, background.getHeight() * 200);
+
+        game.batch.end();
+
+        mapRenderer.setView(camera);
+        mapRenderer.render();
+
         game.batch.begin();
 
-        game.batch.draw(background, 0, 0, 0, 0, background.getWidth() * 200, background.getHeight() * 200);
 
         font.draw(game.batch, "("+SCORE+")", player.sprite.getX()+16, player.sprite.getY()-10);
 
@@ -305,8 +382,9 @@ public class GameScreen implements Screen {
         while (it.hasNext()) {
             Map.Entry pair = (Map.Entry)it.next();
             Ship ship = (Ship) pair.getValue();
+            //System.out.println(ship);
             ship.draw(game.batch);
-            font.draw(game.batch, pair.getKey().toString(), ship.sprite.getX()+16, ship.sprite.getY());
+            font.draw(game.batch, ship.username, ship.sprite.getX()+16, ship.sprite.getY());
             //it.remove();
         }
 
@@ -316,11 +394,25 @@ public class GameScreen implements Screen {
 
 
 
-        for (Bullet bullet : bulletManager.bullets) {
+        for (final Bullet bullet : bulletManager.bullets) {
             if (bullet.free) continue; // fast break on "dead" bullets
-            if (bullet.position.x > worldWidthOffset + worldSize || bullet.position.y > worldHeightOffset + worldSize || bullet.position.y < worldWidthOffset - worldSize || bullet.position.y < worldHeightOffset - worldSize) {
-                bulletManager.destroyBullet(bullet);
-            } else {
+
+            world.QueryAABB(new QueryCallback() {
+                @Override
+                public boolean reportFixture(Fixture fixture) {
+                    if (fixture != player.fixture) {
+                        bulletManager.destroyBullet(bullet);
+                    }
+                    return false;
+                }
+            }, bullet.position.x, bullet.position.y, bullet.position.x+16, bullet.position.y+16);
+
+//            if (bullet.position.x > worldWidthOffset + worldSize
+//                    || bullet.position.y > worldHeightOffset + worldSize
+//                    || bullet.position.y < worldWidthOffset - worldSize
+//                    || bullet.position.y < worldHeightOffset - worldSize) {
+//
+//            } else {
                 if (bullet.isMine) {
                     // check if the player's bullet hit another player
                     Iterator itt = ships.entrySet().iterator();
@@ -328,6 +420,7 @@ public class GameScreen implements Screen {
                         Ship ship = (Ship)((Map.Entry)itt.next()).getValue();
                         if (checkCollision(ship, bullet)) {
                             System.out.println("You hit " + ship.username + "!!");
+                            chatLog.add("You hit " + ship.username + "!!");
                             SCORE++;
                             bulletManager.destroyBullet(bullet);
                         }
@@ -336,30 +429,53 @@ public class GameScreen implements Screen {
                 else {
                     // check if the player got hit by another player's bullet
                     if (checkCollision(player, bullet)) {
-                        System.out.println("You got hit!"); // TODO: hit by?
+                        System.out.println("You got hit by " + bullet.player + "!");
+                        chatLog.add("You got hit by " + bullet.player + "!");
                         SCORE--;
                         bulletManager.destroyBullet(bullet);
-                        player.body.setTransform(2000f, 2000f, 0f);
+                        player.body.setTransform(950, 1100, 0f);
                         player.body.setLinearVelocity(0, 0);
                     }
                 }
-            }
+//            }
         }
 
         bulletManager.draw(game.batch);
 
 
+
         game.batch.end();
+
+        game.batch.setProjectionMatrix(ui.getViewport().getCamera().combined);
+        game.batch.begin();
+
+        int cyo = 0;
+        int size = chatLog.size();
+
+        for (int i = size - 1; i >= 0 && i > size - 6; i--) {
+            String msg = chatLog.get(i);
+            font.draw(game.batch, msg, 10, (cyo * 16) + 16);
+            cyo++;
+        }
+
+
+        game.batch.end();
+
+
+        // Chat Log
+        //todo: update chat window to show new messages in chatLog
+
+
 
         ui.draw();
 
         // debug physics, fun
-        debugRenderer.render(world, camera.combined);
+        // debugRenderer.render(world, camera.combined);
     }
 
     @Override
     public void resize(int width, int height) {
-
+        viewport.update(width, height);
     }
 
     @Override
@@ -382,10 +498,16 @@ public class GameScreen implements Screen {
 
     }
 
-    Pixmap createEnergyBarPixmap (int width, int height, int r, int g, int b) {
+    Pixmap createEnergyBarPixmap (int width, int height, int r, int g, int b, float a) {
         Pixmap pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
-        pixmap.setColor(r, g, b, 1);
+        pixmap.setColor(r, g, b, a);
         pixmap.fill();
         return pixmap;
+    }
+
+    private Object[] appendValue(Object[] obj, Object newObj) {
+        ArrayList<Object> temp = new ArrayList<Object>(Arrays.asList(obj));
+        temp.add(newObj);
+        return temp.toArray();
     }
 }

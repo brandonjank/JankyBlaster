@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -34,11 +35,13 @@ public class MenuScreen implements Screen {
         table.setFillParent(true);
         stage.addActor(table);
 
-
+        Label nameLabel = new Label("Name:", VisUI.getSkin());
         TextField textfield = new TextField("", VisUI.getSkin());
         textfield.setMessageText("Name");
         textfield.setAlignment(Align.center);
+        table.add(nameLabel);
         table.add(textfield);
+        table.row();
 
         textfield.setTextFieldListener(new TextField.TextFieldListener() {
             public void keyTyped (TextField textField, char key) {
@@ -49,6 +52,7 @@ public class MenuScreen implements Screen {
         // Draw a button to start the game
         final TextButton startGameButton = new TextButton("Start Game", VisUI.getSkin());
         table.add(startGameButton);
+        table.row();
 
         startGameButton.addListener(new ChangeListener() {
             @Override
@@ -63,6 +67,7 @@ public class MenuScreen implements Screen {
         // Draw a button to open options screen
         final TextButton optionsButton = new TextButton("Options", VisUI.getSkin());
         table.add(optionsButton);
+        table.row();
 
         startGameButton.addListener(new ChangeListener() {
             @Override
@@ -75,6 +80,7 @@ public class MenuScreen implements Screen {
         // Draw a button to exit the game
         final TextButton exitGameButton = new TextButton("Exit", VisUI.getSkin());
         table.add(exitGameButton);
+        table.row();
 
         exitGameButton.addListener(new ChangeListener() {
             @Override
