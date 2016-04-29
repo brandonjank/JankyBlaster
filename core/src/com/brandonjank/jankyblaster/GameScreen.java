@@ -42,7 +42,6 @@ public class GameScreen implements Screen {
     public Ship player;
     private Array<Body> bodies = new Array<Body>();
     public OrthographicCamera camera;
-    private OrthographicCamera cameraMiniMap;
     Viewport viewport;
     public String username;
     public HashMap<String, Ship> ships = new HashMap<String, Ship>();
@@ -61,9 +60,6 @@ public class GameScreen implements Screen {
     float energyBarHeight = 5f;
     ArrayList<String> chatLog = new ArrayList<String>();
     OrthogonalTiledMapRenderer mapRenderer;
-    List chatList;
-    ScrollPane chatScrollPane;
-    SpriteBatch batchMiniMap;
 
     String serverUrl = "http://162.243.142.208:8080";
 
@@ -91,31 +87,8 @@ public class GameScreen implements Screen {
         world = new World(new Vector2(0, 0), true);
         debugRenderer = new Box2DDebugRenderer();
 
-        // create debug arena walls
-        /*
-        wallAt(0, worldSize, worldSize, 10);
-        wallAt(worldSize, 0, 10, worldSize);
-        wallAt(0, -worldSize, worldSize, 10);
-        wallAt(-worldSize, 0, 10, worldSize);
-        */
-
-
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         viewport = new FitViewport(640, 480, camera);
-
-        // setup minimap camera
-        cameraMiniMap = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        cameraMiniMap.zoom = 4;
-        batchMiniMap = new SpriteBatch();
-
-        // Table fills the screen, everything goes in the table
-        //VisTable table = new VisTable();
-        //table.setFillParent(true);
-        //ui.addActor(table);
-
-        //Label test = new Label("Test", VisUI.getSkin());
-        //table.add(test);
-
 
         // create blue pixel for energy bar
         energyBarTexture = new Texture(createEnergyBarPixmap(1,1,0,0,1,0.8f));
@@ -325,13 +298,6 @@ public class GameScreen implements Screen {
 
         world.step(delta, 10, 10);
 
-        // update our minimap camera
-        cameraMiniMap.update();
-        batchMiniMap.setProjectionMatrix(cameraMiniMap.combined);
-        batchMiniMap.begin();
-        batchMiniMap.draw(player.sprite.getTexture(), player.sprite.getX() - (640/2)*4 + ((200-0)/2)*4, player.sprite.getY() + (480/2)*4 - ((480-280)/2)*4, 20, 20);
-        batchMiniMap.end();
-
         Camera uiCamera = ui.getCamera();
 
         ui.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
@@ -339,8 +305,6 @@ public class GameScreen implements Screen {
         camera.position.set(player.body.getPosition().x, player.body.getPosition().y, 0);
         camera.update();
         //camera.zoom = 5;
-
-
 
         // update and render our bodies
         world.getBodies(bodies);
