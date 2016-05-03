@@ -1,3 +1,10 @@
+/*
+ * LoadingScreen.java
+ *
+ * Created: 4/18/2016
+ * Author : Brandon Jank <jank6275@vandals.uidaho.edu>
+ */
+
 package com.brandonjank.jankyblaster;
 
 import com.badlogic.gdx.ApplicationListener;
@@ -6,6 +13,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.Interpolation;
@@ -13,10 +21,6 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 
-/**
- * Created by jank6275 on 4/18/2016.
- *
- */
 public class LoadingScreen implements Screen {
 
     private Stage stage;
@@ -59,11 +63,13 @@ public class LoadingScreen implements Screen {
         TextureAtlas atlas = manager.get("data/loading/loading.pack", TextureAtlas.class);
 
         // create images from regions
-        logo = new Image(atlas.findRegion("libgdx-logo"));
+        logo = new Image(new Texture(Gdx.files.internal("data/logo.png")));
         loadingFrame = new Image(atlas.findRegion("loading-frame"));
         loadingBarHidden = new Image(atlas.findRegion("loading-bar-hidden"));
         screenBg = new Image(atlas.findRegion("screen-bg"));
         loadingBg = new Image(atlas.findRegion("loading-frame-bg"));
+
+        // ;
 
         // add loading bar animation
         Animation anim = new Animation(0.05f, atlas.findRegions("loading-bar-anim") );
@@ -80,8 +86,6 @@ public class LoadingScreen implements Screen {
 
         // Start loading game assets
         Assets.create();
-
-
     }
 
     /**

@@ -1,12 +1,16 @@
+/*
+ * Options Screen.java
+ *
+ * Created: 4/18/2016
+ * Author : Brandon Jank <jank6275@vandals.uidaho.edu>
+ */
+
 package com.brandonjank.jankyblaster;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 
-/**
- * Created by jank6275 on 4/18/2016.
- */
 public class OptionsScreen implements Screen {
     /**
      * Called when this screen becomes the current screen for a {@link Game}.

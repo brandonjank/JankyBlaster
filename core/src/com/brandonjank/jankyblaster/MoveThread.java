@@ -1,12 +1,16 @@
+/*
+ * MoveThread.java
+ *
+ * Created: 4/26/2016
+ * Author : Brandon Jank <jank6275@vandals.uidaho.edu>
+ */
+
 package com.brandonjank.jankyblaster;
 
 import io.socket.client.Socket;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/**
- * Created by Phelps on 4/26/2016.
- */
 class MoveThread  extends Thread {
     private String s;
     private Float x, y, r, e;

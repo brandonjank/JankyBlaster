@@ -1,3 +1,10 @@
+/*
+ * GameScreen.java
+ *
+ * Created: 4/17/2016
+ * Author : Brandon Jank <jank6275@vandals.uidaho.edu>
+ */
+
 package com.brandonjank.jankyblaster;
 
 import com.badlogic.gdx.Gdx;
@@ -5,7 +12,6 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
@@ -14,13 +20,9 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.*;
-import com.badlogic.gdx.scenes.scene2d.ui.*;
-import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.kotcrab.vis.ui.VisUI;
-import com.kotcrab.vis.ui.widget.VisTable;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
@@ -29,6 +31,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.*;
+import java.util.List;
 
 
 public class GameScreen implements Screen {
@@ -59,7 +62,9 @@ public class GameScreen implements Screen {
     float energyBarWidth = 50f;
     float energyBarHeight = 5f;
     ArrayList<String> chatLog = new ArrayList<String>();
+    HashMap<String, Integer> score = new HashMap<String, Integer>();
     OrthogonalTiledMapRenderer mapRenderer;
+    Map<String, Integer> scoreSorted;
 
     String serverUrl = "http://162.243.142.208:8080";
 
@@ -103,7 +108,7 @@ public class GameScreen implements Screen {
         multiplexer.addProcessor(ui);
         Gdx.input.setInputProcessor(multiplexer);
 
-        background = new Texture("data/background.png");
+        background = Assets.backgroundTexture;
         background.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
 
         connectSocket();
@@ -240,6 +245,36 @@ public class GameScreen implements Screen {
                     e.printStackTrace();
                 }
             }
+        }).on("chat", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONObject data = (JSONObject) args[0];
+                try {
+                    String p = data.getString("p");
+                    String m = data.getString("m");
+                    chatLog.add("<" + p + "> " + m);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).on("death", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONObject data = (JSONObject) args[0];
+                try {
+                    String p = data.getString("p");
+                    if (score.get(p) != null) {
+                        Integer s = score.get(p);
+                        score.put(p, s + 1 );
+                    }
+                    else {
+                        score.put(p, 1 );
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
         });
     }
 
@@ -290,6 +325,7 @@ public class GameScreen implements Screen {
         return false;
     }
 
+
     @Override
     public void render(float delta) {
         // clear the screen
@@ -331,6 +367,8 @@ public class GameScreen implements Screen {
             }
         }
 
+        bulletManager.update();
+
         // update enemy ships
         Iterator it = ships.entrySet().iterator();
         while (it.hasNext()) {
@@ -342,8 +380,6 @@ public class GameScreen implements Screen {
             // draw enemy energy bar
             game.batch.draw(energyBarTexture, ship.sprite.getX()+16, ship.sprite.getY()+5, (ship.energy/ship.energyMax)*energyBarWidth, energyBarHeight);
         }
-
-        bulletManager.update();
 
         shapeRenderer.setProjectionMatrix(camera.combined);
 
@@ -375,6 +411,15 @@ public class GameScreen implements Screen {
                             SCORE++;
                             Assets.explodeEnemySound.play();
                             chatLog.add("You destroyed " + ship.username + "!!");
+
+                            JSONObject data = new JSONObject();
+                            try {
+                                data.put("p", username);
+                                socket.emit("death", data);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
                         } else {
                             // enemy survived
                             Assets.hitSound.play();
@@ -392,18 +437,30 @@ public class GameScreen implements Screen {
                         SCORE--;
                         Assets.explodePlayerSound.play();
                         chatLog.add("You were destroyed by " + bullet.player + "!!");
+
+                        JSONObject data = new JSONObject();
+                        try {
+                            data.put("p", bullet.player);
+                            socket.emit("death", data);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                         // respawn
                         player.body.setLinearVelocity(0, 0);
                         player.body.setTransform(950, 1100, 0f);
                         player.energy = player.energyMax;
+
+
                     } else {
                         // player survived
                         Assets.hit2Sound.play();
-                        chatLog.add("You got hit by " + bullet.player + "!");
+                        chatLog.add(player.username + " got hit by " + bullet.player + "!");
                     }
                     bulletManager.destroyBullet(bullet);
                 }
+
             }
+
         }
 
         // regen player ship energy
@@ -427,6 +484,16 @@ public class GameScreen implements Screen {
             String msg = chatLog.get(i);
             font.draw(game.batch, msg, 10, (cyo * 16) + 16);
             cyo++;
+        }
+
+        if (score != null) {
+            int syo = 0;
+            Iterator sit = score.entrySet().iterator();
+            while (sit.hasNext()) {
+                Map.Entry pair = (Map.Entry)sit.next();
+                font.draw(game.batch, pair.getKey() + ": " + pair.getValue(), Gdx.graphics.getWidth() - 100,  Gdx.graphics.getHeight() - (syo * -16) - 32);
+                syo++;
+            }
         }
 
         game.batch.end();
@@ -474,4 +541,38 @@ public class GameScreen implements Screen {
         temp.add(newObj);
         return temp.toArray();
     }
+
+    private static Map<String, Integer> sortByComparator(Map<String, Integer> unsortMap, final boolean order)
+    {
+
+        List<Map.Entry<String, Integer>> list = new LinkedList<Map.Entry<String, Integer>>(unsortMap.entrySet());
+
+        // Sorting the list based on values
+        Collections.sort(list, new Comparator<Map.Entry<String, Integer>>()
+        {
+            public int compare(Map.Entry<String, Integer> o1,
+                               Map.Entry<String, Integer> o2)
+            {
+                if (order)
+                {
+                    return o1.getValue().compareTo(o2.getValue());
+                }
+                else
+                {
+                    return o2.getValue().compareTo(o1.getValue());
+
+                }
+            }
+        });
+
+        // Maintaining insertion order with the help of LinkedList
+        Map<String, Integer> sortedMap = new LinkedHashMap<String, Integer>();
+        for (Map.Entry<String, Integer> entry : list)
+        {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return sortedMap;
+    }
+
 }

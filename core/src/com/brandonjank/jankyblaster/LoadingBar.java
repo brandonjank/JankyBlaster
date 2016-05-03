@@ -1,14 +1,17 @@
+/*
+ * LoadingBar.java
+ *
+ * Created: 4/28/2016
+ * Author : Brandon Jank <jank6275@vandals.uidaho.edu>
+ */
+
 package com.brandonjank.jankyblaster;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
-/**
- * Created by backb on 4/28/2016.
- */
 public class LoadingBar extends Actor {
 
     Animation animation;

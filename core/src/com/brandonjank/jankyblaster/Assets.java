@@ -1,3 +1,10 @@
+/*
+ * Assets.java
+ *
+ * Created: 4/18/2016
+ * Author : Brandon Jank <jank6275@vandals.uidaho.edu>
+ */
+
 package com.brandonjank.jankyblaster;
 
 import com.badlogic.gdx.assets.AssetManager;
@@ -6,125 +13,132 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-/**
- * Created by jank6275 on 4/18/2016.
- */
-public class Assets {
+class Assets {
     // DECLARE MANAGER
-    public static AssetManager manager;
+    static AssetManager manager;
 
     // DECLARE TEXTURES
-    public static Texture shipTexture;
-    public static final String shipTexturePath = "data/ship/ship.png";
-    public static Texture shipLeftTexture;
-    public static final String shipLeftTexturePath = "data/ship/shipleft.png";
-    public static Texture shipRightTexture;
-    public static final String shipRightTexturePath = "data/ship/shipright.png";
-    public static Texture shipUpgradeTexture;
-    public static final String shipUpgradeTexturePath = "data/ship/shipupgrade.png";
+    static Texture backgroundTexture;
+    private static final String backgroundTexturePath = "data/background.png";
+    static Texture background2Texture;
+    private static final String background2TexturePath = "data/background2.png";
+    static Texture menuBackgroundTexture;
+    private static final String menuBackgroundTexturePath = "data/menubg.png";
 
-    public static Texture bulletTexture;
-    public static final String bulletTexturePath = "data/ship/bullet.png";
-    public static Texture enemyBulletTexture;
-    public static final String enemyBulletTexturePath = "data/ship/enemybullet.png";
-    public static Texture enemyBullet2Texture;
-    public static final String enemyBullet2TexturePath = "data/ship/enemybullet2.png";
-    public static Texture laserTexture;
-    public static final String laserTexturePath = "data/ship/laser.png";
+    static Texture shipTexture;
+    private static final String shipTexturePath = "data/ship/ship.png";
+    static Texture shipLeftTexture;
+    private static final String shipLeftTexturePath = "data/ship/shipleft.png";
+    static Texture shipRightTexture;
+    private static final String shipRightTexturePath = "data/ship/shipright.png";
+    static Texture shipUpgradeTexture;
+    private static final String shipUpgradeTexturePath = "data/ship/shipupgrade.png";
 
-    public static Texture item1Texture;
-    public static final String item1TexturePath = "data/ship/item1.png";
-    public static Texture item2Texture;
-    public static final String item2TexturePath = "data/ship/item2.png";
-    public static Texture item3Texture;
-    public static final String item3TexturePath = "data/ship/item3.png";
-    public static Texture item4Texture;
-    public static final String item4TexturePath = "data/ship/item4.png";
-    public static Texture item5Texture;
-    public static final String item5TexturePath = "data/ship/item5.png";
-    public static Texture item6Texture;
-    public static final String item6TexturePath = "data/ship/item6.png";
+    static Texture bulletTexture;
+    private static final String bulletTexturePath = "data/ship/bullet.png";
+    static Texture enemyBulletTexture;
+    private static final String enemyBulletTexturePath = "data/ship/enemybullet.png";
+    static Texture enemyBullet2Texture;
+    private static final String enemyBullet2TexturePath = "data/ship/enemybullet2.png";
+    static Texture laserTexture;
+    private static final String laserTexturePath = "data/ship/laser.png";
 
-    public static Animation explosionRed;
-    public static final String explosionRed1Path = "data/ship/explosionred01.png";
-    public static final String explosionRed2Path = "data/ship/explosionred02.png";
-    public static final String explosionRed3Path = "data/ship/explosionred03.png";
-    public static final String explosionRed4Path = "data/ship/explosionred04.png";
-    public static final String explosionRed5Path = "data/ship/explosionred05.png";
-    public static final String explosionRed6Path = "data/ship/explosionred06.png";
-    public static final String explosionRed7Path = "data/ship/explosionred07.png";
-    public static final String explosionRed8Path = "data/ship/explosionred08.png";
-    public static final String explosionRed9Path = "data/ship/explosionred09.png";
-    public static final String explosionRed10Path = "data/ship/explosionred10.png";
-    public static final String explosionRed11Path = "data/ship/explosionred11.png";
+    static Texture item1Texture;
+    private static final String item1TexturePath = "data/ship/item1.png";
+    static Texture item2Texture;
+    private static final String item2TexturePath = "data/ship/item2.png";
+    static Texture item3Texture;
+    private static final String item3TexturePath = "data/ship/item3.png";
+    static Texture item4Texture;
+    private static final String item4TexturePath = "data/ship/item4.png";
+    static Texture item5Texture;
+    private static final String item5TexturePath = "data/ship/item5.png";
+    static Texture item6Texture;
+    private static final String item6TexturePath = "data/ship/item6.png";
 
-    public static Animation explosionBlue;
-    public static final String explosionBlue1Path = "data/ship/explosionblue01.png";
-    public static final String explosionBlue2Path = "data/ship/explosionblue02.png";
-    public static final String explosionBlue3Path = "data/ship/explosionblue03.png";
-    public static final String explosionBlue4Path = "data/ship/explosionblue04.png";
-    public static final String explosionBlue5Path = "data/ship/explosionblue05.png";
-    public static final String explosionBlue6Path = "data/ship/explosionblue06.png";
-    public static final String explosionBlue7Path = "data/ship/explosionblue07.png";
-    public static final String explosionBlue8Path = "data/ship/explosionblue08.png";
-    public static final String explosionBlue9Path = "data/ship/explosionblue09.png";
-    public static final String explosionBlue10Path = "data/ship/explosionblue10.png";
-    public static final String explosionBlue11Path = "data/ship/explosionblue11.png";
+    static Animation explosionRed;
+    private static final String explosionRed1Path = "data/ship/explosionred01.png";
+    private static final String explosionRed2Path = "data/ship/explosionred02.png";
+    private static final String explosionRed3Path = "data/ship/explosionred03.png";
+    private static final String explosionRed4Path = "data/ship/explosionred04.png";
+    private static final String explosionRed5Path = "data/ship/explosionred05.png";
+    private static final String explosionRed6Path = "data/ship/explosionred06.png";
+    private static final String explosionRed7Path = "data/ship/explosionred07.png";
+    private static final String explosionRed8Path = "data/ship/explosionred08.png";
+    private static final String explosionRed9Path = "data/ship/explosionred09.png";
+    private static final String explosionRed10Path = "data/ship/explosionred10.png";
+    private static final String explosionRed11Path = "data/ship/explosionred11.png";
+
+    static Animation explosionBlue;
+    private static final String explosionBlue1Path = "data/ship/explosionblue01.png";
+    private static final String explosionBlue2Path = "data/ship/explosionblue02.png";
+    private static final String explosionBlue3Path = "data/ship/explosionblue03.png";
+    private static final String explosionBlue4Path = "data/ship/explosionblue04.png";
+    private static final String explosionBlue5Path = "data/ship/explosionblue05.png";
+    private static final String explosionBlue6Path = "data/ship/explosionblue06.png";
+    private static final String explosionBlue7Path = "data/ship/explosionblue07.png";
+    private static final String explosionBlue8Path = "data/ship/explosionblue08.png";
+    private static final String explosionBlue9Path = "data/ship/explosionblue09.png";
+    private static final String explosionBlue10Path = "data/ship/explosionblue10.png";
+    private static final String explosionBlue11Path = "data/ship/explosionblue11.png";
 
 
     // DECLARE SOUNDS
-    public static Sound alienSound;
-    public static final String alienSoundPath = "data/sounds/alien.wav";
-    public static Sound bossSound;
-    public static final String bossSoundPath = "data/sounds/boss.wav";
-    public static Sound boss2Sound;
-    public static final String boss2SoundPath = "data/sounds/boss2.wav";
-    public static Sound boss3Sound;
-    public static final String boss3SoundPath = "data/sounds/boss3.wav";
-    public static Sound boss4Sound;
-    public static final String boss4SoundPath = "data/sounds/boss4.wav";
-    public static Sound explodeSound;
-    public static final String explodeSoundPath = "data/sounds/explode.wav";
-    public static Sound explodeEnemySound;
-    public static final String explodeEnemySoundPath = "data/sounds/explosion_enemy.wav";
-    public static Sound explodePlayerSound;
-    public static final String explodePlayerSoundPath = "data/sounds/explosion_player.wav";
-    public static Sound failSound;
-    public static final String failSoundPath = "data/sounds/fail.wav";
-    public static Sound gameOverSound;
-    public static final String gameOverSoundPath = "data/sounds/game_over.wav";
-    public static Sound gameStartSound;
-    public static final String gameStartSoundPath = "data/sounds/game_start.wav";
-    public static Sound hitSound;
-    public static final String hitSoundPath = "data/sounds/hit1.wav";
-    public static Sound hit2Sound;
-    public static final String hit2SoundPath = "data/sounds/hit2.wav";
-    public static Sound hit3Sound;
-    public static final String hit3SoundPath = "data/sounds/hit3.wav";
-    public static Sound powerupAmmoSound;
-    public static final String powerupAmmoSoundPath = "data/sounds/powerup_ammo.wav";
-    public static Sound powerupHealthSound;
-    public static final String powerupHealthSoundPath = "data/sounds/powerup_health.wav";
-    public static Sound powerupSpeedSound;
-    public static final String powerupSpeedSoundPath = "data/sounds/powerup_speed.wav";
-    public static Sound powerupWeaponSound;
-    public static final String powerupWeaponSoundPath = "data/sounds/powerup_weapon.wav";
-    public static Sound shootBulletSound;
-    public static final String shootBulletSoundPath = "data/sounds/shoot_bullet.wav";
-    public static Sound shootBullet2Sound;
-    public static final String shootBullet2SoundPath = "data/sounds/shoot_bullet2.wav";
-    public static Sound shootLaserSound;
-    public static final String shootLaserSoundPath = "data/sounds/shoot_laser.wav";
-    public static Sound shootMissileSound;
-    public static final String shootMissileSoundPath = "data/sounds/shoot_missile.wav";
+    static Sound alienSound;
+    private static final String alienSoundPath = "data/sounds/alien.wav";
+    static Sound bossSound;
+    private static final String bossSoundPath = "data/sounds/boss.wav";
+    static Sound boss2Sound;
+    private static final String boss2SoundPath = "data/sounds/boss2.wav";
+    static Sound boss3Sound;
+    private static final String boss3SoundPath = "data/sounds/boss3.wav";
+    static Sound boss4Sound;
+    private static final String boss4SoundPath = "data/sounds/boss4.wav";
+    static Sound explodeSound;
+    private static final String explodeSoundPath = "data/sounds/explode.wav";
+    static Sound explodeEnemySound;
+    private static final String explodeEnemySoundPath = "data/sounds/explosion_enemy.wav";
+    static Sound explodePlayerSound;
+    private static final String explodePlayerSoundPath = "data/sounds/explosion_player.wav";
+    static Sound failSound;
+    private static final String failSoundPath = "data/sounds/fail.wav";
+    static Sound gameOverSound;
+    private static final String gameOverSoundPath = "data/sounds/game_over.wav";
+    static Sound gameStartSound;
+    private static final String gameStartSoundPath = "data/sounds/game_start.wav";
+    static Sound hitSound;
+    private static final String hitSoundPath = "data/sounds/hit1.wav";
+    static Sound hit2Sound;
+    private static final String hit2SoundPath = "data/sounds/hit2.wav";
+    static Sound hit3Sound;
+    private static final String hit3SoundPath = "data/sounds/hit3.wav";
+    static Sound powerupAmmoSound;
+    private static final String powerupAmmoSoundPath = "data/sounds/powerup_ammo.wav";
+    static Sound powerupHealthSound;
+    private static final String powerupHealthSoundPath = "data/sounds/powerup_health.wav";
+    static Sound powerupSpeedSound;
+    private static final String powerupSpeedSoundPath = "data/sounds/powerup_speed.wav";
+    static Sound powerupWeaponSound;
+    private static final String powerupWeaponSoundPath = "data/sounds/powerup_weapon.wav";
+    static Sound shootBulletSound;
+    private static final String shootBulletSoundPath = "data/sounds/shoot_bullet.wav";
+    static Sound shootBullet2Sound;
+    private static final String shootBullet2SoundPath = "data/sounds/shoot_bullet2.wav";
+    static Sound shootLaserSound;
+    private static final String shootLaserSoundPath = "data/sounds/shoot_laser.wav";
+    static Sound shootMissileSound;
+    private static final String shootMissileSoundPath = "data/sounds/shoot_missile.wav";
 
-    public static void create() {
+    static void create() {
         manager = new AssetManager();
         load();
     }
 
-    public static void load() {
+    private static void load() {
         // LOAD TEXTURES
+        manager.load(backgroundTexturePath, Texture.class);
+        manager.load(background2TexturePath, Texture.class);
+        manager.load(menuBackgroundTexturePath, Texture.class);
         manager.load(shipTexturePath, Texture.class);
         manager.load(shipLeftTexturePath, Texture.class);
         manager.load(shipRightTexturePath, Texture.class);
@@ -187,8 +201,11 @@ public class Assets {
         manager.load(shootMissileSoundPath, Sound.class);
     }
 
-    public static void done() {
+    static void done() {
         // ASSIGN TEXTURES
+        backgroundTexture = manager.get(backgroundTexturePath);
+        background2Texture = manager.get(background2TexturePath);
+        menuBackgroundTexture = manager.get(menuBackgroundTexturePath);
         shipTexture = manager.get(shipTexturePath);
         shipLeftTexture = manager.get(shipLeftTexturePath);
         shipRightTexture = manager.get(shipRightTexturePath);
@@ -257,7 +274,7 @@ public class Assets {
         shootMissileSound = manager.get(shootMissileSoundPath);
     }
 
-    public static void dispose() {
+    static void dispose() {
         manager.dispose();
     }
 }

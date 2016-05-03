@@ -1,20 +1,21 @@
+/*
+ * Ship.java
+ *
+ * Created: 4/17/2016
+ * Author : Brandon Jank <jank6275@vandals.uidaho.edu>
+ */
+
 package com.brandonjank.jankyblaster;
 
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.*;
-import io.socket.client.Socket;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
-/**
- * Created by jank6275 on 4/17/2016.
- */
 public class Ship {
 
     Texture texture;
