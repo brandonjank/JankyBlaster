@@ -35,6 +35,7 @@ public class BulletManager {
         Gdx.app.log("BulletManager", "Size is now " + bullets.size());
         Bullet b = new Bullet(game);
         b.isMine = isMine;
+        System.out.println(x + " " + y);
         b.applyVelocity(x, y, r);
         bullets.add(b);
         return b;

@@ -29,29 +29,31 @@ public class Bullet {
         this.game = game;
         texture = Assets.bulletTexture;
         sprite = new Sprite(texture);
-        sprite.setSize(texture.getWidth(), texture.getHeight());
+        sprite.setSize(texture.getWidth() / game.P2M, texture.getHeight() / game.P2M);
+        sprite.setOriginCenter();
     }
 
     public void applyVelocity(float x, float y, float r) {
-        sprite.setPosition(x-8, y-8);
+        sprite.setPosition(x, y);
         this.angle = r;
         update();
     }
 
     public void update() {
-        float x = 3f * (float) Math.cos(angle);
-        float y = 3f * (float) Math.sin(angle);
-        double r = Math.atan2(x, y);
-        sprite.setPosition(sprite.getX() + x, sprite.getY() + y);
+        float x = 0.5f * (float) Math.cos(angle);
+        float y = 0.5f * (float) Math.sin(angle);
+        sprite.setPosition(sprite.getX() + x / game.P2M, sprite.getY() + y / game.P2M);
         sprite.setRotation((float) Math.toDegrees(angle) - 90);
         position.set(sprite.getX(), sprite.getY());
     }
 
     public void draw(Batch batch) {
-        if (isMine)
+        if (isMine) {
             sprite.setTexture(Assets.bulletTexture);
-        else
+        }
+        else {
             sprite.setTexture(Assets.enemyBulletTexture);
+        }
         sprite.draw(batch);
     }
 

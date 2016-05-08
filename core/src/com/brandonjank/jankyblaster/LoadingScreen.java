@@ -20,25 +20,21 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 
 public class LoadingScreen implements Screen {
 
+    final JankyBlaster game;
+    AssetManager manager;
     private Stage stage;
-
     private Image logo;
     private Image loadingFrame;
     private Image loadingBarHidden;
     private Image screenBg;
     private Image loadingBg;
-
     private float startX, endX;
     private float percent;
-
     private Actor loadingBar;
-
-    final JankyBlaster game;
-
-    AssetManager manager;
 
     public LoadingScreen(final JankyBlaster game) {
         this.game = game;
@@ -50,14 +46,12 @@ public class LoadingScreen implements Screen {
      */
     @Override
     public void show() {
-
-
         // load assets for loading screen
         manager.load("data/loading/loading.pack", TextureAtlas.class);
         manager.finishLoading();
 
         // create stage
-        stage = new Stage();
+        stage = new Stage(new FitViewport(640, 480));
 
         // get loading bar texture atlas
         TextureAtlas atlas = manager.get("data/loading/loading.pack", TextureAtlas.class);
@@ -69,10 +63,8 @@ public class LoadingScreen implements Screen {
         screenBg = new Image(atlas.findRegion("screen-bg"));
         loadingBg = new Image(atlas.findRegion("loading-frame-bg"));
 
-        // ;
-
         // add loading bar animation
-        Animation anim = new Animation(0.05f, atlas.findRegions("loading-bar-anim") );
+        Animation anim = new Animation(0.05f, atlas.findRegions("loading-bar-anim"));
         anim.setPlayMode(Animation.PlayMode.LOOP_REVERSED);
         loadingBar = new LoadingBar(anim);
 
@@ -120,7 +112,7 @@ public class LoadingScreen implements Screen {
     }
 
     /**
-     * @param width new width of screen
+     * @param width  new width of screen
      * @param height new height of screen
      * @see ApplicationListener#resize(int, int)
      */
@@ -129,7 +121,7 @@ public class LoadingScreen implements Screen {
         // Set our screen to always be XXX x 480 in size
         width = 480 * width / height;
         height = 480;
-        stage.getViewport().update(width , height, false);
+        stage.getViewport().update(width, height, false);
 
         // Make the background fill the screen
         screenBg.setSize(width, height);

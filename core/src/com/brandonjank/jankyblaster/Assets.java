@@ -10,12 +10,25 @@ package com.brandonjank.jankyblaster;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Animation;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.*;
 
 class Assets {
     // DECLARE MANAGER
     static AssetManager manager;
+
+    // DECLARE FONTS
+    static BitmapFont consolas8Font;
+    private static final String consolas8FontPath = "data/fonts/consolas8.fnt";
+    static BitmapFont consolas10Font;
+    private static final String consolas10FontPath = "data/fonts/consolas10.fnt";
+    static BitmapFont consolas12Font;
+    private static final String consolas12FontPath = "data/fonts/consolas12.fnt";
+    static BitmapFont consolas14Font;
+    private static final String consolas14FontPath = "data/fonts/consolas14.fnt";
+    static BitmapFont consolas16Font;
+    private static final String consolas16FontPath = "data/fonts/consolas16.fnt";
+    static BitmapFont consolas32Font;
+    private static final String consolas32FontPath = "data/fonts/consolas32.fnt";
 
     // DECLARE TEXTURES
     static Texture backgroundTexture;
@@ -82,6 +95,9 @@ class Assets {
     private static final String explosionBlue10Path = "data/ship/explosionblue10.png";
     private static final String explosionBlue11Path = "data/ship/explosionblue11.png";
 
+    static Texture controlsTexture;
+    private static final String controlsTexturePath = "data/overlays/controls.png";
+
 
     // DECLARE SOUNDS
     static Sound alienSound;
@@ -129,12 +145,24 @@ class Assets {
     static Sound shootMissileSound;
     private static final String shootMissileSoundPath = "data/sounds/shoot_missile.wav";
 
+    // declare particle effects
+    static ParticleEffect engineParticle;
+    private static final String engineParticlePath = "data/particles/engine.p";
+
     static void create() {
         manager = new AssetManager();
         load();
     }
 
     private static void load() {
+        // LOAD FONTS
+        manager.load(consolas8FontPath, BitmapFont.class);
+        manager.load(consolas10FontPath, BitmapFont.class);
+        manager.load(consolas12FontPath, BitmapFont.class);
+        manager.load(consolas14FontPath, BitmapFont.class);
+        manager.load(consolas16FontPath, BitmapFont.class);
+        manager.load(consolas32FontPath, BitmapFont.class);
+
         // LOAD TEXTURES
         manager.load(backgroundTexturePath, Texture.class);
         manager.load(background2TexturePath, Texture.class);
@@ -175,6 +203,7 @@ class Assets {
         manager.load(explosionBlue9Path, Texture.class);
         manager.load(explosionBlue10Path, Texture.class);
         manager.load(explosionBlue11Path, Texture.class);
+        manager.load(controlsTexturePath, Texture.class);
 
         // LOAD SOUNDS
         manager.load(alienSoundPath, Sound.class);
@@ -199,9 +228,20 @@ class Assets {
         manager.load(shootBullet2SoundPath, Sound.class);
         manager.load(shootLaserSoundPath, Sound.class);
         manager.load(shootMissileSoundPath, Sound.class);
+
+        // load particles
+        manager.load(engineParticlePath, ParticleEffect.class);
     }
 
     static void done() {
+        // ASSIGN FONTS
+        consolas8Font = manager.get(consolas8FontPath);
+        consolas10Font = manager.get(consolas10FontPath);
+        consolas12Font = manager.get(consolas12FontPath);
+        consolas14Font = manager.get(consolas14FontPath);
+        consolas16Font = manager.get(consolas16FontPath);
+        consolas32Font = manager.get(consolas32FontPath);
+
         // ASSIGN TEXTURES
         backgroundTexture = manager.get(backgroundTexturePath);
         background2Texture = manager.get(background2TexturePath);
@@ -248,6 +288,7 @@ class Assets {
                 new TextureRegion((Texture) manager.get(explosionBlue10Path)),
                 new TextureRegion((Texture) manager.get(explosionBlue11Path))
         );
+        controlsTexture = manager.get(controlsTexturePath);
 
         // ASSIGN SOUNDS
         alienSound = manager.get(alienSoundPath);
@@ -272,6 +313,9 @@ class Assets {
         shootBullet2Sound = manager.get(shootBullet2SoundPath);
         shootLaserSound = manager.get(shootLaserSoundPath);
         shootMissileSound = manager.get(shootMissileSoundPath);
+
+        // ASSIGN PARTICLES
+        engineParticle = manager.get(engineParticlePath);
     }
 
     static void dispose() {

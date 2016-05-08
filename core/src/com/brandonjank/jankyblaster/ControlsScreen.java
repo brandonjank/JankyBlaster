@@ -1,5 +1,5 @@
 /*
- * MenuScreen.java
+ * ControlsScreen.java
  *
  * Created: 4/17/2016
  * Author : Brandon Jank <jank6275@vandals.uidaho.edu>
@@ -15,17 +15,19 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.kotcrab.vis.ui.widget.VisImage;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 
-public class MenuScreen implements Screen {
+public class ControlsScreen implements Screen {
 
     final JankyBlaster game;
     Vector3 cursor;
     private Stage stage;
 
-    public MenuScreen(final JankyBlaster game) {
+    public ControlsScreen(final JankyBlaster game) {
         this.game = game;
     }
 
@@ -39,57 +41,30 @@ public class MenuScreen implements Screen {
         this.stage = new Stage(new FitViewport(640, 480));
         Gdx.input.setInputProcessor(stage);
 
-        // Table fills the screen, everything goes in the table
+        // create table filling the screen
         VisTable table = new VisTable();
         table.setFillParent(true);
+        table.align(Align.center | Align.bottom);
+
+        // controls image
+        final VisImage controlsImage = new VisImage(Assets.controlsTexture);
+        table.add(controlsImage).pad(50f);
+        table.row();
+
+        // back button
+        final VisTextButton backButton = new VisTextButton("GO BACK");
+        backButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new MenuScreen(game));
+                dispose();
+            }
+        });
+        table.add(backButton);
+        table.row();
+
+        // add table to the stage
         stage.addActor(table);
-
-        // start button
-        final VisTextButton startGameButton = new VisTextButton("PLAY");
-        startGameButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new GameScreen(game));
-                dispose();
-            }
-        });
-        table.add(startGameButton);
-        table.row().pad(3.0f);
-
-        // controls button
-        final VisTextButton controlsButton = new VisTextButton("CONTROLS");
-        controlsButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new ControlsScreen(game));
-                dispose();
-            }
-        });
-        table.add(controlsButton);
-        table.row().pad(3.0f);
-
-        // options button
-        final VisTextButton optionsButton = new VisTextButton("OPTIONS");
-        optionsButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new OptionsScreen(game));
-                dispose();
-            }
-        });
-        table.add(optionsButton);
-        table.row().pad(3.0f);
-
-        // exit button
-        final VisTextButton exitGameButton = new VisTextButton("EXIT GAME");
-        exitGameButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                Gdx.app.exit();
-            }
-        });
-        table.add(exitGameButton);
-        table.row().pad(3.0f);
 
         // cursor effect
         Assets.engineParticle.getEmitters().first().setPosition(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY());

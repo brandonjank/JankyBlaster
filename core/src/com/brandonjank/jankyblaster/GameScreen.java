@@ -12,6 +12,7 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
@@ -36,6 +37,7 @@ import java.util.List;
 
 public class GameScreen implements Screen {
 
+    int P2M = 16;
     private JankyBlaster game;
     public Socket socket;
     private Texture background;
@@ -46,7 +48,7 @@ public class GameScreen implements Screen {
     private Array<Body> bodies = new Array<Body>();
     public OrthographicCamera camera;
     Viewport viewport;
-    public String username;
+    String username;
     public HashMap<String, Ship> ships = new HashMap<String, Ship>();
     BitmapFont font = new BitmapFont();
     ArrayList<Bullet> bullets = new ArrayList<Bullet>();
@@ -65,20 +67,16 @@ public class GameScreen implements Screen {
     HashMap<String, Integer> score = new HashMap<String, Integer>();
     OrthogonalTiledMapRenderer mapRenderer;
     Map<String, Integer> scoreSorted;
+    TextureRegion tr;
 
     String serverUrl = "http://162.243.142.208:8080";
 
-    public GameScreen(JankyBlaster game, String uname) {
+    public GameScreen(JankyBlaster game) {
+        username = game.prefs.getString("username", "Guest" + (int )(Math.random() * 999 + 111));
 
         chatLog.add("Welcome to JankyBlaster, have fun and play nice!");
-        chatLog.add("Version v0.2.1-alpha");
-
-        if (uname != null) {
-            username = uname;
-        }
-        else {
-            username = "Guest" + (int )(Math.random() * 999 + 111);
-        }
+        chatLog.add("Version: v0.2.1-alpha");
+        chatLog.add("Your username is: "+username);
 
         // injects the base Game object into the Screen scene if we ever need to access things on the outside
         this.game = game;
@@ -92,15 +90,13 @@ public class GameScreen implements Screen {
         world = new World(new Vector2(0, 0), true);
         debugRenderer = new Box2DDebugRenderer();
 
-        camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        viewport = new FitViewport(640, 480, camera);
+        camera = new OrthographicCamera(Gdx.graphics.getWidth() / P2M, Gdx.graphics.getHeight() / P2M);
+        //viewport = new FitViewport(pixelsToMeteres(640), pixelsToMeteres(480), camera);
 
         // create blue pixel for energy bar
         energyBarTexture = new Texture(createEnergyBarPixmap(1,1,0,0,1,0.8f));
 
-        // create a ship for the player and set the keyboard focus to it
-        player = new Ship(this, socketID, username);
-        player.launch(950, 1100);
+        //player.launch(1, 1);
 
         // pass input to both of them
         InputMultiplexer multiplexer = new InputMultiplexer();
@@ -110,11 +106,12 @@ public class GameScreen implements Screen {
 
         background = Assets.backgroundTexture;
         background.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+        tr = new TextureRegion(background);
 
         connectSocket();
         configSocketEvents();
 
-        TiledMap map = new TmxMapLoader().load("data/maps/test.tmx");
+        TiledMap map = new TmxMapLoader().load("data/maps/test2.tmx");
         TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get(0);
         int columns = layer.getWidth();
         int rows = layer.getHeight();
@@ -124,15 +121,19 @@ public class GameScreen implements Screen {
                 TiledMapTileLayer.Cell cell = layer.getCell(i, j);
 
                 if (cell != null) {
-                    int size = 16;
-                    int x = (i * size) + 8;
-                    int y = (j * size) + 8;
-                    wallAt(x, y, 8, 8);
+                    int size = 1;
+                    int x = (i * size);
+                    int y = (j * size);
+                    wallAt(x, y, 0.5f, 0.5f);
                 }
             }
         }
 
-        mapRenderer = new OrthogonalTiledMapRenderer(map, 1);
+        // create a ship for the player and set the keyboard focus to it
+        player = new Ship(this, socketID, username);
+        player.launch(columns/2, rows/2);
+
+        mapRenderer = new OrthogonalTiledMapRenderer(map,  1f / P2M);
 
 
     }
@@ -278,9 +279,9 @@ public class GameScreen implements Screen {
         });
     }
 
-    public void wallAt(int x, int y, int width, int height) {
+    public void wallAt(int x, int y, float width, float height) {
         BodyDef wallsDef = new BodyDef();
-        wallsDef.position.set(x, y);
+        wallsDef.position.set(x + 0.5f, y + 0.5f);
         Body wallsBody = world.createBody(wallsDef);
         PolygonShape wallsShape = new PolygonShape();
         wallsShape.setAsBox(width, height);
@@ -289,13 +290,14 @@ public class GameScreen implements Screen {
     }
 
     public void spawnBullet(float x, float y, float r, String owner, String p) {
-        Assets.shootBulletSound.play();
+        // scale audio by distance from player, 2 screen widths (20 units) or more should be silent.
+        float distanceScale =  Math.max(0.0f, Math.min(1.0f, 20/(float)distance(player.sprite.getX(), player.sprite.getY(), x, y)));
+        Assets.shootBulletSound.play(game.prefs.getFloat("volume",1f)*game.prefs.getFloat("volumeEffects",1f)*distanceScale);
         bulletManager.fireBullet(x, y, r, false, owner, p);
     }
 
     public void newPlayer(String socketID, String username) {
         Ship newPlayer = new Ship(this, socketID, username);
-        System.out.println(newPlayer.socketID);
         ships.put(socketID, newPlayer);
     }
 
@@ -312,13 +314,11 @@ public class GameScreen implements Screen {
     }
 
     public double distance(float x1, float y1, float x2, float y2) {
-        x1 -= x2;
-        y1 -= y2;
-        return Math.sqrt(x1 * x1 + y1 * y1);
+        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
     }
 
     public boolean checkCollision(Ship ship, Bullet bullet) {
-        double bulletDistance = distance(ship.sprite.getX()+ship.sprite.getWidth()/2, ship.sprite.getY()+ship.sprite.getHeight()/2, bullet.sprite.getX(), bullet.sprite.getY());
+        double bulletDistance = distance(ship.sprite.getX()+((ship.sprite.getWidth()/2)/P2M), ship.sprite.getY()+((ship.sprite.getHeight()/2)/P2M), bullet.sprite.getX(), bullet.sprite.getY());
         if (bulletDistance < (ship.sprite.getWidth()/2) - 2) {
             return true;
         }
@@ -340,17 +340,17 @@ public class GameScreen implements Screen {
 
         camera.position.set(player.body.getPosition().x, player.body.getPosition().y, 0);
         camera.update();
-        //camera.zoom = 5;
-
-        // update and render our bodies
+        //camera.zoom = 1;
         world.getBodies(bodies);
 
         game.batch.setProjectionMatrix(camera.combined);
 
         game.batch.begin();
-        game.batch.draw(background, 0, 0, 0, 0, background.getWidth() * 200, background.getHeight() * 200);
+        game.batch.draw(background, 0f, 0f, 200f, 200f);
 
         game.batch.end();
+
+        //mapRenderer.setView(camera);
 
         mapRenderer.setView(camera);
         mapRenderer.render();
@@ -378,7 +378,7 @@ public class GameScreen implements Screen {
             ship.draw(game.batch);
             font.draw(game.batch, ship.username, ship.sprite.getX()+16, ship.sprite.getY());
             // draw enemy energy bar
-            game.batch.draw(energyBarTexture, ship.sprite.getX()+16, ship.sprite.getY()+5, (ship.energy/ship.energyMax)*energyBarWidth, energyBarHeight);
+            game.batch.draw(energyBarTexture, ship.sprite.getX()+1, ship.sprite.getY()+(5/P2M), ((ship.energy/ship.energyMax)*energyBarWidth) / P2M, energyBarHeight / P2M);
         }
 
         shapeRenderer.setProjectionMatrix(camera.combined);
@@ -396,7 +396,7 @@ public class GameScreen implements Screen {
                     }
                     return false;
                 }
-            }, bullet.position.x, bullet.position.y, bullet.position.x+16, bullet.position.y+16);
+            }, bullet.position.x, bullet.position.y, bullet.position.x+(16f/P2M), bullet.position.y+(16f/P2M));
 
             // check for player impacts
             if (bullet.isMine) {
@@ -409,7 +409,7 @@ public class GameScreen implements Screen {
                         if (ship.energy <= 0) {
                             // enemy destroyed
                             SCORE++;
-                            Assets.explodeEnemySound.play();
+                            Assets.explodeEnemySound.play(game.prefs.getFloat("volume",1f)*game.prefs.getFloat("volumeEffects",1f));
                             chatLog.add("You destroyed " + ship.username + "!!");
 
                             JSONObject data = new JSONObject();
@@ -422,7 +422,7 @@ public class GameScreen implements Screen {
 
                         } else {
                             // enemy survived
-                            Assets.hitSound.play();
+                            Assets.hitSound.play(game.prefs.getFloat("volume",1f)*game.prefs.getFloat("volumeEffects",1f));
                             chatLog.add("You hit " + ship.username + "!!");
                         }
                         bulletManager.destroyBullet(bullet);
@@ -435,7 +435,7 @@ public class GameScreen implements Screen {
                     if (player.energy <= 0) {
                         // player "died"
                         SCORE--;
-                        Assets.explodePlayerSound.play();
+                        Assets.explodePlayerSound.play(game.prefs.getFloat("volume",1f)*game.prefs.getFloat("volumeEffects",1f));
                         chatLog.add("You were destroyed by " + bullet.player + "!!");
 
                         JSONObject data = new JSONObject();
@@ -453,7 +453,7 @@ public class GameScreen implements Screen {
 
                     } else {
                         // player survived
-                        Assets.hit2Sound.play();
+                        Assets.hit2Sound.play(game.prefs.getFloat("volume",1f)*game.prefs.getFloat("volumeEffects",1f));
                         chatLog.add(player.username + " got hit by " + bullet.player + "!");
                     }
                     bulletManager.destroyBullet(bullet);
@@ -468,7 +468,7 @@ public class GameScreen implements Screen {
             player.energy = Math.min(player.energy + player.energyGainedPerTick, player.energyMax);
         }
         // display player ship energy bar
-        game.batch.draw(energyBarTexture, player.sprite.getX()+16, player.sprite.getY()+5, (player.energy/player.energyMax)*energyBarWidth, energyBarHeight);
+        game.batch.draw(energyBarTexture, player.sprite.getX()+1, player.sprite.getY()+(5/P2M), ((player.energy/player.energyMax)*energyBarWidth) / P2M, energyBarHeight / P2M);
 
         bulletManager.draw(game.batch);
 
@@ -501,12 +501,14 @@ public class GameScreen implements Screen {
         ui.draw();
 
         // debug physics, fun
-        // debugRenderer.render(world, camera.combined);
+        debugRenderer.render(world, camera.combined);
+
+
     }
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height);
+        //viewport.update(width, height);
     }
 
     @Override
